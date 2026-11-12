@@ -149,8 +149,10 @@ Herramienta de estudio y verificación. Usa la calculadora en evaluaciones solo 
 
 ## Autor
 
-*(tu nombre)* – Materia SIS-3540, Modelos Econométricos.
+*SOFTWARE: Univ. Barrionuevo Delgado Angel*
+*FORMULARIO : Univ, Jhonatan Pally* 
+Materia SIS-3540, Modelos Econométricos.
 
 ## Licencia
 
-*(por definir, por ejemplo MIT)*
+*MIT*
