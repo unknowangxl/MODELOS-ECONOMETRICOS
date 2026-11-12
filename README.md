@@ -110,8 +110,8 @@ El código se guarda como texto plano (`.txt`) para ver cambios en GitHub y se c
 
 ## Hoja de ruta
 
-- [ ] **Fase 0:** prototipo de interfaz (menú, captura y guardado de la matriz de datos)
-- [ ] **Fase 1:** núcleo común (sumas, matrices, p-valores, valores críticos)
+- [x] **Fase 0:** prototipo de interfaz (menú, captura y guardado de la matriz de datos)
+- [x] **Fase 1:** núcleo común (sumas, matrices, p-valores, valores críticos)
 - [ ] **Fase 2:** Tema 1 – regresión simple
 - [ ] **Fase 3:** Tema 2 – regresión múltiple
 - [ ] **Fase 4:** Tema 4 – correlación y asistente "Mejor modelo"
