@@ -2,7 +2,7 @@
 
 Programa en **PPL (HP Prime Programming Language)** para resolver ejercicios de **regresión lineal simple, regresión lineal múltiple y correlación lineal**, siguiendo el procedimiento del formulario de la materia *Modelos Econométricos SIS-3540*: hipótesis, α, estadístico, criterio de rechazo, valor calculado y decisión.
 
-> **Estado del proyecto:** 🟡 fase de planteamiento y diseño. Todavía no hay código; este README describe lo que se construirá.
+> **Estado del proyecto:** 🟡 En construcción a paso lento.
 
 ---
 
@@ -150,9 +150,12 @@ Herramienta de estudio y verificación. Usa la calculadora en evaluaciones solo 
 ## Autor
 
 *SOFTWARE: Univ. Barrionuevo Delgado Angel*
+
 *FORMULARIO : Univ, Jhonatan Pally* 
+
+
 Materia SIS-3540, Modelos Econométricos.
 
 ## Licencia
 
-*MIT*
+*LICENSE MIT*
