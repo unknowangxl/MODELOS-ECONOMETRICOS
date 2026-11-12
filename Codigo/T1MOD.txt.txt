@@ -1,0 +1,319 @@
+
+EXPORT T1EST()
+BEGIN
+  LOCAL res,lns,n,m,b0,b1,sg;
+
+  INI9();
+
+  n:=L9(1);
+
+  IF n<3 THEN
+    MSGBOX("No hay datos suficientes. Cargue los datos primero.");
+    RETURN 0;
+  END;
+
+  res:=REGS(M1,1,2,n);
+
+  IF SIZE(res)==0 THEN
+    RETURN 0;
+  END;
+
+  m:=L9(9);
+  b0:=res(13);
+  b1:=res(12);
+
+  lns:={};
+
+  lns:=AGR(lns,"n = "+STRING(res(1)));
+
+  IF m==2 THEN
+    lns:=AGR(lns,"Sum x = "+FM(res(2)));
+    lns:=AGR(lns,"Sum y = "+FM(res(3)));
+    lns:=AGR(lns,"Sum xy = "+FM(res(4)));
+    lns:=AGR(lns,"Sum x2 = "+FM(res(5)));
+    lns:=AGR(lns,"Sum y2 = "+FM(res(6)));
+    lns:=AGR(lns,"xbar = "+FM(res(10)));
+    lns:=AGR(lns,"ybar = "+FM(res(11)));
+  END;
+
+  lns:=AGR(lns,"Sxx = "+FM(res(7)));
+  lns:=AGR(lns,"Syy = "+FM(res(8)));
+  lns:=AGR(lns,"Sxy = "+FM(res(9)));
+
+  lns:=AGR(lns,"b1 = Sxy/Sxx = "+FM(b1));
+  lns:=AGR(lns,"b0 = ybar-b1*xbar = "+FM(b0));
+
+  sg:=" + ";
+
+  IF b1<0 THEN
+    sg:=" - ";
+  END;
+
+  lns:=AGR(lns,"Y^ = "+FM(b0)+sg+FM(ABS(b1))+" X");
+
+  lns:=AGR(lns,"SST = Syy = "+FM(res(14)));
+  lns:=AGR(lns,"SSR = b1*Sxy = "+FM(res(15)));
+  lns:=AGR(lns,"SSE = SST-SSR = "+FM(res(16)));
+
+  lns:=AGR(lns,"s2 = SSE/(n-2) = "+FM(res(17)));
+  lns:=AGR(lns,"s = "+FM(res(18)));
+
+  lns:=AGR(lns,"r = "+FM(res(19)));
+  lns:=AGR(lns,"R2 = SSR/SST = "+FM(res(20)));
+
+  MOSTRAR("ESTIMAR MODELO",lns);
+
+  RETURN 1;
+END;
+// ===== Auxiliares internos de la Entrega 2 =====
+
+// Valida datos y devuelve REGS de M1 ({} si hay error)
+PREP()
+BEGIN
+  LOCAL n;
+  INI9();
+  n:=L9(1);
+  IF n<3 THEN
+    MSGBOX("No hay datos suficientes. Cargue los datos primero.");
+    RETURN {};
+  END;
+  RETURN REGS(M1,1,2,n);
+END;
+
+// Pide alfa (valor inicial = L9(7)); devuelve 0 si cancela o es invalido
+PEDALFA()
+BEGIN
+  LOCAL al;
+  al:=L9(7);
+  IF INPUT(al,"NIVEL alfa","alfa (0 a 1) =","Significancia")==0 THEN
+    RETURN 0;
+  END;
+  IF al<=0 OR al>=1 THEN
+    MSGBOX("alfa debe estar entre 0 y 1.");
+    RETURN 0;
+  END;
+  RETURN al;
+END;
+
+// Pide un numero; devuelve {ok,valor}
+PEDNUM(tit,etq,v0)
+BEGIN
+  LOCAL v;
+  v:=v0;
+  IF INPUT(v,tit,etq,"")==0 THEN
+    RETURN {0,0};
+  END;
+  RETURN {1,v};
+END;
+
+// Prueba t bilateral de H0: par = c. Agrega lineas a lns y la devuelve.
+// nom="B0", ne="b0", tr/tn = texto de conclusion si rechaza / no rechaza
+TESTT(lns,nom,ne,est,se,gl,c,al,tr,tn)
+BEGIN
+  LOCAL tc,tcal,pv;
+  tc:=TCRIT2(gl,al);
+  tcal:=(est-c)/se;
+  pv:=PVT2(gl,ABS(tcal));
+  lns:=AGR(lns,"H0: "+nom+" = "+FM(c));
+  lns:=AGR(lns,"H1: "+nom+" <> "+FM(c));
+  lns:=AGR(lns,"alfa = "+FM(al));
+  lns:=AGR(lns,"T=("+ne+"-valor)/EE ~ t("+STRING(gl)+")");
+  lns:=AGR(lns,"Rechazar H0 si |T| > "+FM(tc));
+  lns:=AGR(lns,"EE("+ne+") = "+FM(se));
+  lns:=AGR(lns,"T calc = "+FM(tcal));
+  lns:=AGR(lns,"p-valor = "+FM(pv));
+  IF ABS(tcal)>tc THEN
+    lns:=AGR(lns,"Rechazar H0");
+    lns:=AGR(lns,tr);
+  ELSE
+    lns:=AGR(lns,"No rechazar H0");
+    lns:=AGR(lns,tn);
+  END;
+  RETURN lns;
+END;
+
+// Inferencia sobre un parametro: IC o prueba de hipotesis
+// pasos = lista de lineas extra (solo modo estudio)
+PARAM(nom,ne,est,se,gl,c0,pasos)
+BEGIN
+  LOCAL op,al,tc,lns,k,rc,li,ls;
+  LOCAL c,tr,tn;
+    op:=1;
+  IF CHOOSE(op,"INFERENCIA "+nom,
+            "Intervalo de confianza",
+            "Prueba de hipotesis")==0 THEN
+    RETURN 0;
+  END;
+  al:=PEDALFA();
+  IF al==0 THEN RETURN 0; END;
+  lns:={};
+
+  IF op==1 THEN
+    tc:=TCRIT2(gl,al);
+    li:=est-tc*se;
+    ls:=est+tc*se;
+    IF L9(9)==2 THEN
+      FOR k FROM 1 TO SIZE(pasos) DO
+        lns:=AGR(lns,pasos(k));
+      END;
+    END;
+    lns:=AGR(lns,"1-alfa = "+FM(100*(1-al))+"%");
+    lns:=AGR(lns,"gl = n-2 = "+STRING(gl));
+    lns:=AGR(lns,"t0 = "+FM(tc));
+    lns:=AGR(lns,ne+" = "+FM(est));
+    lns:=AGR(lns,"EE("+ne+") = "+FM(se));
+    lns:=AGR(lns,"Margen = t0*EE = "+FM(tc*se));
+    lns:=AGR(lns,"LI = "+FM(li));
+    lns:=AGR(lns,"LS = "+FM(ls));
+    lns:=AGR(lns,"P("+FM(li)+"<="+nom+"<="+FM(ls)+")="+FM(1-al));
+    MOSTRAR("IC PARA "+nom,lns);
+  ELSE
+    rc:=PEDNUM("VALOR DE H0","valor de "+nom+" =",c0);
+    IF rc(1)==0 THEN RETURN 0; END;
+    c:=rc(2);
+    tr:=nom+" <> "+FM(c);
+    tn:="No se descarta "+nom+" = "+FM(c);
+    IF nom=="B0" AND c==0 THEN
+      tr:="El modelo NO pasa por el origen";
+      tn:="El modelo pasa por el origen";
+    END;
+    IF L9(9)==2 THEN
+      FOR k FROM 1 TO SIZE(pasos) DO
+        lns:=AGR(lns,pasos(k));
+      END;
+    END;
+    lns:=TESTT(lns,nom,ne,est,se,gl,c,al,tr,tn);
+    MOSTRAR("PRUEBA SOBRE "+nom,lns);
+  END;
+  RETURN 1;
+END;
+
+// ===== 1.1 IC / prueba para B0 =====
+// EE(b0) = s*sqrt(SumX2/(n*Sxx))
+EXPORT T11IC0()
+BEGIN
+  LOCAL res,n,se,pasos;
+  res:=PREP();
+  IF SIZE(res)==0 THEN RETURN 0; END;
+  n:=res(1);
+  se:=res(18)*SQRT(res(5)/(n*res(7)));
+  pasos:={"s = "+FM(res(18)),
+          "Sum x2 = "+FM(res(5)),
+          "n*Sxx = "+FM(n*res(7)),
+          "EE=s*sqrt(Sx2/(n*Sxx))"};
+  RETURN PARAM("B0","b0",res(13),se,n-2,0,pasos);
+END;
+
+// ===== 1.2 IC / prueba para B1 =====
+// EE(b1) = s/sqrt(Sxx)
+EXPORT T12IC1()
+BEGIN
+  LOCAL res,n,se,pasos;
+  res:=PREP();
+  IF SIZE(res)==0 THEN RETURN 0; END;
+  n:=res(1);
+  se:=res(18)/SQRT(res(7));
+  pasos:={"s = "+FM(res(18)),
+          "Sxx = "+FM(res(7)),
+          "EE=s/sqrt(Sxx)"};
+  RETURN PARAM("B1","b1",res(12),se,n-2,1,pasos);
+END;
+
+// ===== 1.3 Prediccion =====
+// Interpolacion: Yh +- t0*s*sqrt(1/n+(X0-xbar)^2/Sxx)
+// Extrapolacion: Yh +- t0*s*sqrt(1+1/n+(X0-xbar)^2/Sxx)
+EXPORT T13PRED()
+BEGIN
+  LOCAL res,n,al,tc,k,xmin,xmax;
+  LOCAL                 rc,x0,yh,dd,se,inter,lns;
+  res:=PREP();
+  IF SIZE(res)==0 THEN RETURN 0; END;
+  n:=res(1);
+  al:=PEDALFA();
+  IF al==0 THEN RETURN 0; END;
+  tc:=TCRIT2(n-2,al);
+
+  xmin:=M1(1,2);
+  xmax:=M1(1,2);
+  FOR k FROM 2 TO n DO
+    IF M1(k,2)<xmin THEN xmin:=M1(k,2); END;
+    IF M1(k,2)>xmax THEN xmax:=M1(k,2); END;
+  END;
+
+  REPEAT
+    rc:=PEDNUM("PREDICCION","X0 (cancelar=salir) =",res(10));
+    IF rc(1)==1 THEN
+      x0:=rc(2);
+      yh:=res(13)+res(12)*x0;
+      dd:=(x0-res(10))^2/res(7);
+      inter:=(x0>=xmin AND x0<=xmax);
+      IF inter THEN
+        se:=res(18)*SQRT(1/n+dd);
+      ELSE
+        se:=res(18)*SQRT(1+1/n+dd);
+      END;
+      lns:={};
+      lns:=AGR(lns,"X0 = "+FM(x0));
+      lns:=AGR(lns,"Region: ["+FM(xmin)+" , "+FM(xmax)+"]");
+      IF inter THEN
+        lns:=AGR(lns,"INTERPOLACION");
+      ELSE
+        lns:=AGR(lns,"EXTRAPOLACION (X0 fuera)");
+      END;
+      lns:=AGR(lns,"Y0^ = b0+b1*X0 = "+FM(yh));
+      IF L9(9)==2 THEN
+        lns:=AGR(lns,"xbar = "+FM(res(10)));
+        lns:=AGR(lns,"Sxx = "+FM(res(7)));
+        lns:=AGR(lns,"s = "+FM(res(18)));
+        lns:=AGR(lns,"(X0-xbar)^2/Sxx = "+FM(dd));
+      END;
+      lns:=AGR(lns,"1-alfa = "+FM(100*(1-al))+"%");
+      lns:=AGR(lns,"t0 = "+FM(tc)+" (gl="+STRING(n-2)+")");
+      lns:=AGR(lns,"Margen = "+FM(tc*se));
+      lns:=AGR(lns,"LI = "+FM(yh-tc*se));
+      lns:=AGR(lns,"LS = "+FM(yh+tc*se));
+      MOSTRAR("PREDICCION",lns);
+    END;
+  UNTIL rc(1)==0;
+  RETURN 1;
+END;
+
+// ===== 1.4 Utilidad del modelo: prueba t de B1 = 0 =====
+// T = b1/(s/sqrt(Sxx)) ~ t(n-2)   (T^2 = F de 1.5)
+EXPORT T14UTIL()
+BEGIN
+  LOCAL res,n,al,se,lns;
+
+  res:=PREP();
+
+  IF SIZE(res)==0 THEN
+    RETURN 0;
+  END;
+
+  n:=res(1);
+
+  al:=PEDALFA();
+
+  IF al==0 THEN
+    RETURN 0;
+  END;
+
+  se:=res(18)/SQRT(res(7));
+
+  lns:={};
+
+  IF L9(9)==2 THEN
+    lns:=AGR(lns,"b1 = "+FM(res(12)));
+    lns:=AGR(lns,"s = "+FM(res(18)));
+    lns:=AGR(lns,"Sxx = "+FM(res(7)));
+    lns:=AGR(lns,"EE(b1) = s/sqrt(Sxx)");
+  END;
+
+  lns:=TESTT(lns,"B1","b1",res(12),se,n-2,0,al,
+    "El modelo SI tiene poder predictivo",
+    "No se demuestra poder predictivo");
+
+  MOSTRAR("UTILIDAD DEL MODELO",lns);
+
+  RETURN 1;
+END;
