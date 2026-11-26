@@ -1,4 +1,3 @@
-
  // ============================================================
  // SIS3540 - HP PRIME
  // FASE 0: PROTOTIPO DE INTERFAZ
@@ -221,7 +220,6 @@ END;
 // ============================================================
 // TEMA 1: REGRESION LINEAL SIMPLE
 // ============================================================
-
 EXPORT TEMA1()
 BEGIN
   LOCAL op,nm;
@@ -260,16 +258,14 @@ BEGIN
     IF op==4 THEN T12IC1(); END;
     IF op==5 THEN T13PRED(); END;
     IF op==6 THEN T14UTIL(); END;
-
-    IF op>6 AND op<10 THEN
-      PROX(nm(op));
-    END;
+    IF op==7 THEN T15F(); END;
+    IF op==8 THEN T16LIN(); END;
+    IF op==9 THEN T17NOLIN(); END;
 
   UNTIL op==10;
 
   RETURN 1;
-END;
-    
+END;    
 // ============================================
 // TEMA 2:REGRESION LINEAL MULTIPLE
 // ============================================================
@@ -489,4 +485,3 @@ BEGIN
 
   RETURN 1;
 END;
-
