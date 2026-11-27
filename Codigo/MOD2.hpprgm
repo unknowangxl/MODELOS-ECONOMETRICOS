@@ -21,6 +21,14 @@ EXPORT R2S:=0;
 EXPORT R2DF:=0;
 EXPORT R2Cancel:=0;
 
+// DATOS COMPARTIDOS ENTRE MODULOS (contrato MOD2 <-> MOD3).
+// Solo se transfieren observaciones originales: X y Y, nunca ln(Y), ln(X) ni resultados.
+EXPORT RComValido:=0;
+EXPORT RComN:=0;
+EXPORT RComK:=0;
+EXPORT RComX:=MAKEMAT(0,30,5);
+EXPORT RComY:=MAKEMAT(0,30,1);
+
 R2Fmt(x,d)
 BEGIN
  RETURN STRING(ROUND(x,d));
@@ -447,6 +455,54 @@ BEGIN
  R2Ver("TABLA DE SUMATORIAS: "+R2NombreModelo(),ls);
 END;
 
+
+// Copia los datos originales de MOD2 al espacio comun para que MOD3 pueda leerlos.
+// No altera el tipo de modelo ni las matrices de calculo de MOD2.
+EXPORT R2ExportaDatos()
+BEGIN
+ LOCAL i,j;
+ RComX:=MAKEMAT(0,30,5);
+ RComY:=MAKEMAT(0,30,1);
+ FOR i FROM 1 TO R2N DO
+  RComY(i,1):=R2Y(i,1);
+  FOR j FROM 1 TO R2K DO
+   RComX(i,j):=R2X(i,j);
+  END;
+ END;
+ RComN:=R2N; RComK:=R2K; RComValido:=1;
+ R2Aviso("Datos originales exportados al espacio compartido. MOD3 ya puede importarlos.");
+END;
+
+// Copia al MOD2 los datos originales previamente publicados por MOD3.
+// Requiere confirmacion porque reemplaza la tabla de datos activa de MOD2.
+EXPORT R2ImportaDatos()
+BEGIN
+ LOCAL op,i,j;
+ IF RComValido<>1 THEN
+  R2Aviso("No hay datos compartidos. Exporte primero desde MOD3.");
+  RETURN;
+ END;
+ IF RComN<5 OR RComN>30 OR RComK<1 OR RComK>5 THEN
+  R2Aviso("Dimensiones compartidas no validas (n: 5-30; k: 1-5).");
+  RETURN;
+ END;
+ op:=R2Elige("REEMPLAZAR DATOS ACTUALES DE MOD2?",{"SI, importar "+STRING(RComN)+" x "+STRING(RComK),"NO, conservar datos"});
+ IF op<>1 THEN RETURN; END;
+ R2N:=RComN; R2K:=RComK;
+ R2X:=MAKEMAT(0,R2N,R2K); R2Y:=MAKEMAT(0,R2N,1);
+ FOR i FROM 1 TO R2N DO
+  R2Y(i,1):=RComY(i,1);
+  FOR j FROM 1 TO R2K DO R2X(i,j):=RComX(i,j); END;
+ END;
+ R2D:=MAKEMAT(0,R2N,R2K+1);
+ R2U:=MAKEMAT(0,R2N,1);
+ R2A:=MAKEMAT(0,R2K+1,R2K+1);
+ R2G:=MAKEMAT(0,R2K+1,1);
+ R2AI:=MAKEMAT(0,R2K+1,R2K+1);
+ R2B:=MAKEMAT(0,R2K+1,1);
+ R2Aviso("Importacion completada. Se conservaron los datos originales.");
+END;
+
 R2Datos()
 BEGIN
  LOCAL op,fin;
@@ -459,7 +515,9 @@ BEGIN
    "4 Elegir tipo de modelo",
    "5 Ver tabla de sumatorias",
    "6 Configurar alfa",
-   "7 Volver"
+   "7 Exportar datos para MOD3",
+   "8 Importar datos de MOD3",
+   "9 Volver"
   });
   IF op==1 THEN R2Editor(); END;
   IF op==2 THEN R2Config(); END;
@@ -470,7 +528,9 @@ BEGIN
   IF op==4 THEN R2TipoModelo(); END;
   IF op==5 THEN R2Sumatorias(); END;
   IF op==6 THEN RmConfigAlpha(); END;
-  IF op==7 OR op==0 THEN fin:=1; END;
+  IF op==7 THEN R2ExportaDatos(); END;
+  IF op==8 THEN R2ImportaDatos(); END;
+  IF op==9 OR op==0 THEN fin:=1; END;
  UNTIL fin==1;
 END;
 
