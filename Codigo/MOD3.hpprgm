@@ -78,11 +78,11 @@ BEGIN
  FOR i FROM 1 TO n DO
   FOR j FROM 1 TO k DO
    v:=R2NumEdit("Fila "+STRING(i)+", X"+STRING(j),0);
-   IF R2Cancel==1 THEN RETURN; END;
+   IF R2Cancel==1 THEN R3N:=0; RETURN; END;
    R3X(i,j):=v;
   END;
   v:=R2NumEdit("Fila "+STRING(i)+", Y",0);
-  IF R2Cancel==1 THEN RETURN; END;
+  IF R2Cancel==1 THEN R3N:=0; RETURN; END;
   R3Y(i,1):=v;
  END;
  R3RValido:=0; R3Modelo:={};
@@ -479,7 +479,7 @@ BEGIN
  LOCAL ok,sel,rest,i,j,best,bestR,r,res0,res1,df,fv,fc,pv,dec;
  LOCAL q,nom,txt,seguir,step,ctrl,lista;
  IF R3CalculaSimple()==0 THEN R2Aviso("Datos insuficientes o variable constante."); RETURN; END;
- best:=0; bestR:=0;
+ best:=1; bestR:=-1;
  FOR i FROM 1 TO R3K DO
   r:=ABS(R3R(1,i+1));
   IF r>bestR THEN bestR:=r; best:=i; END;
