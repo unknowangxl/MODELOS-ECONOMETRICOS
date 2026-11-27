@@ -413,7 +413,8 @@ END;
 
 R2Sumatorias()
 BEGIN
- LOCAL ok,i,j,v,sx,sxx,sxy,sy,syy,ls;
+ LOCAL ok,i,j,v,sx,sxx,sxy,sy;
+ LOCAL syy,ls;
  ok:=R2Prepara();
  IF ok==0 THEN RETURN; END;
  sy:=0; syy:=0;
@@ -475,7 +476,8 @@ END;
 
 R2Calcula()
 BEGIN
- LOCAL i,j,n,k,ym,yh,e,det,ok;
+ LOCAL i,j,n,k,ym,yh,e,det;
+ LOCAL ok;
  n:=R2N; k:=R2K;
  IF n<=k+1 THEN RETURN 0; END;
  ok:=R2Prepara();
@@ -679,7 +681,8 @@ END;
 
 R2Predice()
 BEGIN
- LOCAL ok,i,v,vec,tmp,yh,yhlog,h,df;
+ LOCAL ok,i,v,vec,tmp,yh,yhlog,h;
+ LOCAL df;
  LOCAL tc,m1,m2,l1,u1,l2,u2;
  ok:=R2Calcula();
  IF ok==0 THEN R2Aviso("Ingrese datos validos y estime el modelo"); RETURN; END;
@@ -722,7 +725,8 @@ END;
 // Calcula un modelo con cualquier subconjunto de columnas de R2X.
 R2Submodelo(sel)
 BEGIN
- LOCAL i,j,q,dp,ap,ai,gp,bp,yh;
+ LOCAL i,j,q,dp,ap,ai,gp,bp;
+ LOCAL yh;
  LOCAL ym,sse,sst,ssr,det,e,ok,v;
  q:=SIZE(sel);
  IF q<1 THEN RETURN {}; END;
@@ -749,7 +753,8 @@ END;
 
 EXPORT R2Adicion()
 BEGIN
- LOCAL i,op,h,df,fc,fv,pv,dec,qf;
+ LOCAL i,op,h,df,fc,fv,pv,dec;
+ LOCAL qf;
  LOCAL ini,add,fin,res0,resf,ssri,ssrf,ssef;
  LOCAL opciones,nombreIni,nombreAdd,nombreFin;
  IF R2K<2 THEN R2Aviso("Se necesitan al menos 2 variables X"); RETURN; END;
