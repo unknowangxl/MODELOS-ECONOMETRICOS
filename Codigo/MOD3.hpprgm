@@ -123,7 +123,7 @@ END;
 R3Sumatorias()
 BEGIN
  LOCAL i,j,sx,sxx,sxy,sy,syy,v;
- LOCAL ls,k;
+ LOCAL ls,k,sxi,sxj;
  IF R3N<5 OR R3K<1 THEN
   R2Aviso("Primero importe o cree una tabla de datos.");
   RETURN;
@@ -153,9 +153,14 @@ BEGIN
  END;
  FOR j FROM 1 TO R3K DO
   FOR i FROM j+1 TO R3K DO
-   v:=0;
-   FOR k FROM 1 TO R3N DO v:=v+R3X(k,j)*R3X(k,i); END;
-   ls:=CONCAT(ls,{"SUMA X"+STRING(j)+"X"+STRING(i)+" = "+R2Fmt(v,6)});
+   v:=0; sxi:=0; sxj:=0;
+   FOR k FROM 1 TO R3N DO
+    v:=v+R3X(k,j)*R3X(k,i);
+    sxi:=sxi+R3X(k,j);
+    sxj:=sxj+R3X(k,i);
+   END;
+   ls:=CONCAT(ls,{"SUMA X"+STRING(j)+"X"+STRING(i)+" = "+R2Fmt(v,6),
+    "Sx"+STRING(j)+"x"+STRING(i)+" = "+R2Fmt(v-sxi*sxj/R3N,6)});
   END;
  END;
  R2Ver("SUMATORIAS: CORRELACION LINEAL",ls);
