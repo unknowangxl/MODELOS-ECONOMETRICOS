@@ -681,7 +681,7 @@ END;
 
 R2Predice()
 BEGIN
- LOCAL ok,i,v,vec,tmp,yh,h,df;
+ LOCAL ok,i,v,vec,tmp,yh,yhlog,h,df;
  LOCAL tc,m1,m2,l1,u1,l2,u2;
  ok:=R2Calcula();
  IF ok==0 THEN R2Aviso("Ingrese datos validos y estime el modelo"); RETURN; END;
@@ -696,13 +696,13 @@ BEGIN
   END;
   vec(i+1,1):=v;
  END;
- tmp:=TRN(vec)*R2B; yh:=tmp(1,1);
- IF R2T>1 THEN yh:=EXP(yh); END;
+ tmp:=TRN(vec)*R2B; yhlog:=tmp(1,1); yh:=yhlog;
+ IF R2T>1 THEN yh:=EXP(yhlog); END;
  tmp:=TRN(vec)*R2AI*vec; h:=tmp(1,1);
  IF h<0 THEN IF ABS(h)<0.0000001 THEN h:=0; ELSE R2Aviso("Error numerico en X0' A^-1 X0"); RETURN; END; END;
  df:=R2DF; tc:=STUDENT_ICDF(df,1-RmAlpha/2);
  m1:=tc*R2S*SQRT(h); m2:=tc*R2S*SQRT(1+h);
- l1:=yh-m1; u1:=yh+m1; l2:=yh-m2; u2:=yh+m2;
+ l1:=yhlog-m1; u1:=yhlog+m1; l2:=yhlog-m2; u2:=yhlog+m2;
  R2Ver("2.5 RESULTADO DE LA PREDICCION",{
   "Modelo: "+R2NombreModelo(),
   "Prediccion reexpresada = "+R2Fmt(yh,6),
