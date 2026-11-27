@@ -279,8 +279,7 @@ Un módulo se considera terminado solo cuando:
 |---|---|
 | Menú principal (`MENUPRIN`) | Funcional en el simulador; falta verificar el táctil |
 | Módulo 1: Datos y modelo (`MOD1`) | Implementado en el código; pendiente de compilación y prueba final en simulador |
-| Módulo 1: submódulos 1.1 a 1.4 | Implementados: IC para β0, IC para β1, predicción e интервalo de predicción, utilidad mediante T. Pendiente de compilación y validación en simulador |\n| Módulo 1: submódulos 1.5 a 1.7 | Pendiente |
-| Módulo 2 | Pendiente |
+| Módulo 1: submódulos 1.1 a 1.4 | Implementados: IC para β0, IC para β1, predicción e intervalo de predicción, utilidad mediante T. Pendiente de compilación y validación en simulador |\r\n| Módulo 1: submódulos 1.5 a 1.7 | Pendiente |\r\n| Módulo 2 | Pendiente |
 | Módulo 3 | Pendiente |
 | Módulo 4 | Pendiente |
 | Editor de datos tipo hoja de cálculo | Pendiente |
