@@ -311,7 +311,7 @@ BEGIN
  IF R2Cancel==1 THEN RETURN; END;
  IF ABS(rho)>=1 OR ABS(r)>=1 THEN R2Aviso("rho y r deben estar entre -1 y 1."); RETURN; END;
  zv:=SQRT(R3N-3)/2*LN(((1+r)*(1-rho))/((1-r)*(1+rho)));
- zc:=NORM_ICDF(0,1,1-RmAlpha/2); dec:=ABS(zv)>zc;
+ zc:=NORMALD_ICDF(0,1,1-RmAlpha/2); dec:=ABS(zv)>zc;
  R2Ver("PRUEBA Z PARA VALOR ESPECIFICO",{
   "H0: rho = "+R2Fmt(rho,5),
   "H1: rho <> "+R2Fmt(rho,5),
@@ -330,7 +330,7 @@ BEGIN
  LOCAL zc,a,b,li,ls;
  IF ABS(r)>=1 THEN R2Aviso("No se puede construir el intervalo si |r|=1."); RETURN; END;
  IF R3N<=3 THEN R2Aviso("Se requieren mas de 3 observaciones."); RETURN; END;
- zc:=NORM_ICDF(0,1,1-RmAlpha/2);
+ zc:=NORMALD_ICDF(0,1,1-RmAlpha/2);
  a:=0.5*LN((1+r)/(1-r))-zc/SQRT(R3N-3);
  b:=0.5*LN((1+r)/(1-r))+zc/SQRT(R3N-3);
  li:=(EXP(2*a)-1)/(EXP(2*a)+1);
@@ -506,7 +506,7 @@ BEGIN
  WHILE SIZE(rest)>0 AND seguir==1 DO
   best:=0; bestR:=-1;
   FOR j FROM 1 TO SIZE(rest) DO
-   r:=ctrl:=R3Indices(sel);
+   ctrl:=R3Indices(sel);
    r:=R3Parcial(1,rest(j)+1,ctrl);
    IF ABS(r)<=1.000001 AND ABS(r)>bestR THEN bestR:=ABS(r); best:=j; bestR:=ABS(r); END;
   END;
@@ -522,7 +522,7 @@ BEGIN
      fv:=(res1(1)-res0(1))/(res1(2)/df);
      fc:=FISHER_ICDF(1,df,1-RmAlpha); pv:=1-FISHER_CDF(1,df,fv); dec:=fv>fc;
      txt:=CONCAT(txt,{"Paso "+STRING(step)+": evaluar X"+STRING(i),
-      "r parcial con controles "+STRING(sel)+" = "+R2Fmt(R3Parcial(1,i+1,sel+1),6),
+      "r parcial con controles "+STRING(sel)+" = "+R2Fmt(R3Parcial(1,i+1,R3Indices(sel)),6),
       "F parcial = "+R2Fmt(fv,6)+"   F critico = "+R2Fmt(fc,6),
       "p-valor = "+R2Fmt(pv,7),
       IFTE(dec,"Se incorpora X"+STRING(i),"No se incorpora X"+STRING(i)+": detener")});
