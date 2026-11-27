@@ -344,9 +344,16 @@ EXPORT RmX0:=0;
 
 RmMuestraValida()
 BEGIN
-  LOCAL n,rr;
-  rr:=RmRes; n:=SIZE(RmX);
-  IF n<3 OR SIZE(RmY)<>n OR SIZE(rr)<12 OR rr(7)<=0 THEN RETURN 0; END;
+  LOCAL n,rr,ok;
+  n:=SIZE(RmX);
+  IF n<3 OR SIZE(RmY)<>n THEN RETURN 0; END;
+  ok:=1;
+  IF RmT>1 THEN IF MIN(RmY)<=0 THEN ok:=0; END; END;
+  IF RmT==3 THEN IF MIN(RmX)<=0 THEN ok:=0; END; END;
+  IF ok==0 THEN RETURN 0; END;
+  RmCalc();
+  rr:=RmRes;
+  IF SIZE(rr)<12 OR rr(7)<=0 THEN RETURN 0; END;
   RETURN 1;
 END;
 
