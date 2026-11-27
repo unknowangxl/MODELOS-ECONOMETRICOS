@@ -421,7 +421,7 @@ BEGIN
             IF LEFT(buf,1)=="-" THEN buf:=RIGHT(buf,SIZE(buf)-1); ELSE buf:="-"+buf; END;
           ELSE
             IF celda=="." THEN
-              IF INSTR(buf,".")==0 THEN buf:=buf+"."; END;
+              IF INSTRING(buf,".")==0 THEN buf:=buf+"."; END;
             ELSE
               IF buf=="0" THEN buf:=celda; ELSE buf:=buf+celda; END;
             END;
