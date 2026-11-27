@@ -7,6 +7,8 @@ EXPORT R2N:=10;
 EXPORT R2K:=2;
 EXPORT R2X:=MAKEMAT(0,10,2);
 EXPORT R2Y:=MAKEMAT(0,10,1);
+EXPORT R2U:=MAKEMAT(0,10,1);
+EXPORT R2T:=1; // 1 lineal, 2 exponencial, 3 potencial
 EXPORT R2D:=MAKEMAT(0,10,3);
 EXPORT R2A:=MAKEMAT(0,3,3);
 EXPORT R2G:=MAKEMAT(0,3,1);
@@ -111,32 +113,30 @@ END;
 
 R2Elige(tit,items)
 BEGIN
- LOCAL s,n,k,fin,i,y,r;
- n:=SIZE(items); s:=1; fin:=0; r:=0;
+ LOCAL s,n,k,fin,i,y,r,top;
+ n:=SIZE(items); s:=1; top:=1; fin:=0; r:=0;
  REPEAT
   RECT_P(G1,0,0,319,239,RGB(8,16,40),RGB(8,16,40));
   R2Cab(tit,RGB(80,220,130),4);
-  FOR i FROM 1 TO n DO
-   y:=36+(i-1)*29;
-   IF y<210 THEN
-    IF i==s THEN
-     RECT_P(G1,4,y,315,y+25,RGB(255,255,255),RGB(30,80,130));
-     TEXTOUT_P(items(i),G1,10,y+5,3,RGB(0,0,0));
-    ELSE
-     RECT_P(G1,4,y,315,y+25,RGB(70,80,120),RGB(16,28,64));
-     TEXTOUT_P(items(i),G1,10,y+5,3,RGB(255,255,255));
-    END;
+  FOR i FROM top TO MIN(n,top+5) DO
+   y:=36+(i-top)*29;
+   IF i==s THEN
+    RECT_P(G1,4,y,315,y+25,RGB(255,255,255),RGB(30,80,130));
+    TEXTOUT_P(items(i),G1,10,y+5,3,RGB(0,0,0));
+   ELSE
+    RECT_P(G1,4,y,315,y+25,RGB(70,80,120),RGB(16,28,64));
+    TEXTOUT_P(items(i),G1,10,y+5,3,RGB(255,255,255));
    END;
   END;
   R2Pie("ENTER: elegir   ESC: volver");
   BLIT_P(G0,G1); k:=R2Espera();
-  IF k==2 THEN s:=MAX(1,s-1); END;
-  IF k==12 THEN s:=MIN(n,s+1); END;
+  IF k==2 THEN s:=MAX(1,s-1); IF s<top THEN top:=s; END; END;
+  IF k==12 THEN s:=MIN(n,s+1); IF s>top+5 THEN top:=s-5; END; END;
   IF k==30 THEN r:=s; fin:=1; END;
   IF k==4 THEN fin:=1; END;
   IF k==1000 THEN
    IF TapY>=36 AND TapY<210 THEN
-    i:=IP((TapY-36)/29)+1;
+    i:=top+IP((TapY-36)/29);
     IF i>=1 AND i<=n THEN r:=i; fin:=1; END;
    END;
    IF TapY>=219 THEN fin:=1; END;
@@ -360,6 +360,93 @@ BEGIN
  UNTIL done==1;
 END;
 
+R2TipoModelo()
+BEGIN
+ LOCAL op;
+ op:=R2Elige("TIPO DE MODELO",{
+  "1 Lineal: Y=b0+b1X1+...",
+  "2 Exponencial: Y=b0*e^(bX)",
+  "3 Potencial: Y=b0*X1^b1..."
+ });
+ IF op>0 THEN R2T:=op; END;
+END;
+
+R2NombreModelo()
+BEGIN
+ IF R2T==1 THEN RETURN "LINEAL"; END;
+ IF R2T==2 THEN RETURN "EXPONENCIAL"; END;
+ RETURN "POTENCIAL";
+END;
+
+// Prepara internamente la variable dependiente y los regresores transformados.
+// Los datos originales R2X y R2Y nunca se modifican.
+R2Prepara()
+BEGIN
+ LOCAL i,j,v;
+ R2D:=MAKEMAT(0,R2N,R2K+1);
+ R2U:=MAKEMAT(0,R2N,1);
+ FOR i FROM 1 TO R2N DO
+  IF R2T==1 THEN
+   R2U(i,1):=R2Y(i,1);
+  ELSE
+   IF R2Y(i,1)<=0 THEN
+    R2Aviso("Para modelos exponencial y potencial, todos los Y deben ser positivos.");
+    RETURN 0;
+   END;
+   R2U(i,1):=LN(R2Y(i,1));
+  END;
+  R2D(i,1):=1;
+  FOR j FROM 1 TO R2K DO
+   v:=R2X(i,j);
+   IF R2T==3 THEN
+    IF v<=0 THEN
+     R2Aviso("En el modelo potencial todos los valores X deben ser positivos.");
+     RETURN 0;
+    END;
+    v:=LN(v);
+   END;
+   R2D(i,j+1):=v;
+  END;
+ END;
+ RETURN 1;
+END;
+
+R2Sumatorias()
+BEGIN
+ LOCAL ok,i,j,v,sx,sxx,sxy,sy;
+ LOCAL syy,ls;
+ ok:=R2Prepara();
+ IF ok==0 THEN RETURN; END;
+ sy:=0; syy:=0;
+ FOR i FROM 1 TO R2N DO
+  sy:=sy+R2U(i,1); syy:=syy+R2U(i,1)^2;
+ END;
+ ls:={"MODELO: "+R2NombreModelo(),"n = "+STRING(R2N),
+  "Variable dependiente usada: "+IFTE(R2T==1,"Y","ln(Y)"),
+  "SUMATORIAS DE LA REGRESION TRANSFORMADA",
+  "Suma de Y* = "+R2Fmt(sy,6),
+  "Suma de (Y*)^2 = "+R2Fmt(syy,6)};
+ FOR j FROM 1 TO R2K DO
+  sx:=0; sxx:=0; sxy:=0;
+  FOR i FROM 1 TO R2N DO
+   v:=R2D(i,j+1);
+   sx:=sx+v; sxx:=sxx+v^2; sxy:=sxy+v*R2U(i,1);
+  END;
+  ls:=CONCAT(ls,{" ","Regresor "+IFTE(R2T==3,"ln(X"+STRING(j)+")","X"+STRING(j)),
+   "Suma = "+R2Fmt(sx,6),
+   "Suma cuadrados = "+R2Fmt(sxx,6),
+   "Suma producto con Y* = "+R2Fmt(sxy,6)});
+ END;
+ FOR j FROM 1 TO R2K DO
+  FOR i FROM j+1 TO R2K DO
+   v:=0;
+   FOR sx FROM 1 TO R2N DO v:=v+R2D(sx,j+1)*R2D(sx,i+1); END;
+   ls:=CONCAT(ls,{"Suma cruzada regressor "+STRING(j)+" y "+STRING(i)+" = "+R2Fmt(v,6)});
+  END;
+ END;
+ R2Ver("TABLA DE SUMATORIAS: "+R2NombreModelo(),ls);
+END;
+
 R2Datos()
 BEGIN
  LOCAL op,fin;
@@ -369,46 +456,48 @@ BEGIN
    "1 Editar tabla de observaciones",
    "2 Configurar n y numero de X",
    "3 Ver matrices de datos X e Y",
-   "4 Configurar alfa",
-   "5 Volver"
+   "4 Elegir tipo de modelo",
+   "5 Ver tabla de sumatorias",
+   "6 Configurar alfa",
+   "7 Volver"
   });
   IF op==1 THEN R2Editor(); END;
   IF op==2 THEN R2Config(); END;
   IF op==3 THEN
-   R2VerM("MATRIZ X (datos independientes)",R2X,R2N,R2K);
-   R2VerM("VECTOR Y (dependiente)",R2Y,R2N,1);
+   R2VerM("MATRIZ X (datos originales)",R2X,R2N,R2K);
+   R2VerM("VECTOR Y (datos originales)",R2Y,R2N,1);
   END;
-  IF op==4 THEN RmConfigAlpha(); END;
-  IF op==5 OR op==0 THEN fin:=1; END;
+  IF op==4 THEN R2TipoModelo(); END;
+  IF op==5 THEN R2Sumatorias(); END;
+  IF op==6 THEN RmConfigAlpha(); END;
+  IF op==7 OR op==0 THEN fin:=1; END;
  UNTIL fin==1;
 END;
 
 R2Calcula()
 BEGIN
  LOCAL i,j,n,k,ym,yh,e,det;
+ LOCAL ok;
  n:=R2N; k:=R2K;
  IF n<=k+1 THEN RETURN 0; END;
- R2D:=MAKEMAT(0,n,k+1);
- FOR i FROM 1 TO n DO
-  R2D(i,1):=1;
-  FOR j FROM 1 TO k DO R2D(i,j+1):=R2X(i,j); END;
- END;
+ ok:=R2Prepara();
+ IF ok==0 THEN RETURN 0; END;
  R2A:=TRN(R2D)*R2D;
  det:=DET(R2A);
  IF ABS(det)<0.0000000001 THEN RETURN 0; END;
  R2AI:=R2A^(-1);
- R2G:=TRN(R2D)*R2Y;
+ R2G:=TRN(R2D)*R2U;
  R2B:=R2AI*R2G;
  ym:=0;
- FOR i FROM 1 TO n DO ym:=ym+R2Y(i,1); END;
+ FOR i FROM 1 TO n DO ym:=ym+R2U(i,1); END;
  ym:=ym/n;
  R2SSE:=0; R2SST:=0;
  FOR i FROM 1 TO n DO
   yh:=0;
   FOR j FROM 1 TO k+1 DO yh:=yh+R2D(i,j)*R2B(j,1); END;
-  e:=R2Y(i,1)-yh;
+  e:=R2U(i,1)-yh;
   R2SSE:=R2SSE+e^2;
-  R2SST:=R2SST+(R2Y(i,1)-ym)^2;
+  R2SST:=R2SST+(R2U(i,1)-ym)^2;
  END;
  R2SSR:=R2SST-R2SSE;
  R2DF:=n-k-1;
@@ -427,7 +516,7 @@ BEGIN
  END;
  R2VerM("MATRIZ DE DISENO X (n x k+1)",R2D,R2N,R2K+1);
  R2VerM("MATRIZ TRANSPUESTA X'",TRN(R2D),R2K+1,R2N);
- R2VerM("VECTOR Y (variable dependiente)",R2Y,R2N,1);
+ R2VerM("VECTOR Y* (escala del modelo)",R2U,R2N,1);
  R2VerM("MATRIZ A = X' * X",R2A,R2K+1,R2K+1);
  R2VerM("VECTOR g = X' * Y",R2G,R2K+1,1);
  R2VerM("INVERSA A^-1",R2AI,R2K+1,R2K+1);
@@ -435,13 +524,15 @@ BEGIN
  R2Ver("RESULTADO DEL METODO MATRICIAL",{
   "Modelo estimado por minimos cuadrados",
   "b = A^-1 * g",
-  "b0 = "+R2Fmt(R2B(1,1),6),
+  IFTE(R2T==1,"b0 = "+R2Fmt(R2B(1,1),6),"a = ln(b0) = "+R2Fmt(R2B(1,1),6)),
+  IFTE(R2T==1,"","b0 = exp(a) = "+R2Fmt(EXP(R2B(1,1)),6)),
   "SSE = "+R2Fmt(R2SSE,6),
   "SST = "+R2Fmt(R2SST,6),
   "SSR = "+R2Fmt(R2SSR,6),
   "s = raiz(SSE/gl error) = "+R2Fmt(R2S,6),
   "gl error = n-k-1 = "+STRING(R2DF),
-  "Los valores de b estan en el vector mostrado."
+  "Modelo: "+R2NombreModelo(),
+  "Los coeficientes estan en la escala transformada mostrada."
  });
 END;
 
@@ -462,15 +553,17 @@ BEGIN
  FOR i FROM 1 TO R2K+1 DO
   ee:=R2S*SQRT(R2AI(i,i));
   lo:=R2B(i,1)-tc*ee; hi:=R2B(i,1)+tc*ee;
-  R2Ver("IC PARA BETA"+STRING(i-1),{
+  IF R2T>1 AND i==1 THEN lo:=EXP(lo); hi:=EXP(hi); END;
+  R2Ver("IC PARA "+IFTE(R2T>1 AND i==1,"B0","BETA"+STRING(i-1)),{
    "Confianza = "+R2Fmt(100*(1-RmAlpha),2)+"%",
    "Parametro: beta"+STRING(i-1),
-   "b"+STRING(i-1)+" = "+R2Fmt(R2B(i,1),6),
+   IFTE(R2T>1 AND i==1,"a=ln(b0) = "+R2Fmt(R2B(i,1),6),"b"+STRING(i-1)+" = "+R2Fmt(R2B(i,1),6)),
    "Cii = "+R2Fmt(R2AI(i,i),8),
    "EE(bi) = S*raiz(Cii) = "+R2Fmt(ee,6),
    "Margen = t0*EE = "+R2Fmt(tc*ee,6),
    "Limite inferior = "+R2Fmt(lo,6),
-   "Limite superior = "+R2Fmt(hi,6)
+   "Limite superior = "+R2Fmt(hi,6),
+   IFTE(R2T>1 AND i==1,"Intervalo de b0 reexpresado con exp()","")
   });
  END;
 END;
@@ -488,7 +581,8 @@ BEGIN
    pv:=2*(1-STUDENT_CDF(df,ABS(tv)));
    dec:=ABS(tv)>tc;
    R2Ver("2.3 PRUEBA PARA BETA"+STRING(i-1),{
-    "H0: beta"+STRING(i-1)+" = 0",
+      "Modelo: "+R2NombreModelo(),
+    "H0: beta"+STRING(i-1)+" = 0 (escala transformada)",
     "H1: beta"+STRING(i-1)+" <> 0",
     "Prueba bilateral",
     "Alfa = "+R2Fmt(RmAlpha,4)+"   gl = "+STRING(df),
@@ -548,7 +642,8 @@ BEGIN
  fv:=msr/mse; fc:=FISHER_ICDF(k,df,1-RmAlpha);
  pv:=1-FISHER_CDF(k,df,fv); dec:=fv>fc;
  R2Ver("2.4 PODER PREDICTIVO: PRUEBA F",{
-  "H0: beta1 = beta2 = ... = betak = 0",
+  "Modelo: "+R2NombreModelo(),
+  "H0: beta1 = beta2 = ... = betak = 0 (escala transformada)",
   "H1: al menos un beta_j <> 0",
   "Alfa = "+R2Fmt(RmAlpha,4),
   "F = (SSR/k)/(SSE/(n-k-1))",
@@ -572,7 +667,7 @@ BEGIN
   "Error        "+R2Fmt(mse,5),
   " ",
   "SST = sum(yi - ymedia)^2",
-  "SSR = sum(bj*gj) - (sumY)^2/n",
+  "SSR = sum(bj*gj) - (sumY*)^2/n",
   "SSE = SST - SSR"
  });
  R2Ver("DECISION: PODER PREDICTIVO",{
@@ -586,7 +681,8 @@ END;
 
 R2Predice()
 BEGIN
- LOCAL ok,i,v,vec,tmp,yh,h,df;
+ LOCAL ok,i,v,vec,tmp,yh,yhlog,h;
+ LOCAL df;
  LOCAL tc,m1,m2,l1,u1,l2,u2;
  ok:=R2Calcula();
  IF ok==0 THEN R2Aviso("Ingrese datos validos y estime el modelo"); RETURN; END;
@@ -595,79 +691,131 @@ BEGIN
  FOR i FROM 1 TO R2K DO
   v:=R2NumEdit("Valor de X"+STRING(i)+" en X0",0);
   IF R2Cancel==1 THEN RETURN; END;
+  IF R2T==3 THEN
+   IF v<=0 THEN R2Aviso("En el modelo potencial, X debe ser positivo."); RETURN; END;
+   v:=LN(v);
+  END;
   vec(i+1,1):=v;
  END;
- tmp:=TRN(vec)*R2B; yh:=tmp(1,1);
+ tmp:=TRN(vec)*R2B; yhlog:=tmp(1,1); yh:=yhlog;
+ IF R2T>1 THEN yh:=EXP(yhlog); END;
  tmp:=TRN(vec)*R2AI*vec; h:=tmp(1,1);
  IF h<0 THEN IF ABS(h)<0.0000001 THEN h:=0; ELSE R2Aviso("Error numerico en X0' A^-1 X0"); RETURN; END; END;
  df:=R2DF; tc:=STUDENT_ICDF(df,1-RmAlpha/2);
  m1:=tc*R2S*SQRT(h); m2:=tc*R2S*SQRT(1+h);
- l1:=yh-m1; u1:=yh+m1; l2:=yh-m2; u2:=yh+m2;
+ l1:=yhlog-m1; u1:=yhlog+m1; l2:=yhlog-m2; u2:=yhlog+m2;
  R2Ver("2.5 RESULTADO DE LA PREDICCION",{
-  "Y estimado = X0' * b = "+R2Fmt(yh,6),
+  "Modelo: "+R2NombreModelo(),
+  "Prediccion reexpresada = "+R2Fmt(yh,6),
   "X0' * A^-1 * X0 = "+R2Fmt(h,8),
   "gl = n-k-1 = "+STRING(df),
   "Confianza = "+R2Fmt(100*(1-RmAlpha),2)+"%",
   "t critico = "+R2Fmt(tc,6),
   "IC media: Yhat +/- t*S*raiz(h)",
-  "Limite inferior media = "+R2Fmt(l1,6),
-  "Limite superior media = "+R2Fmt(u1,6),
+  "Limite inferior media = "+R2Fmt(IFTE(R2T==1,l1,EXP(l1)),6),
+  "Limite superior media = "+R2Fmt(IFTE(R2T==1,u1,EXP(u1)),6),
   "IP individual: Yhat +/- t*S*raiz(1+h)",
-  "Limite inferior prediccion = "+R2Fmt(l2,6),
-  "Limite superior prediccion = "+R2Fmt(u2,6)
+  "Limite inferior prediccion = "+R2Fmt(IFTE(R2T==1,l2,EXP(l2)),6),
+  "Limite superior prediccion = "+R2Fmt(IFTE(R2T==1,u2,EXP(u2)),6),
+  IFTE(R2T==1,"Escala original de Y","Intervalos calculados en ln(Y) y reexpresados con exp()")
  });
  R2VerM("VECTOR X0 (con intercepto)",vec,R2K+1,1);
 END;
 
-R2Submodelo(p)
+// Calcula un modelo con cualquier subconjunto de columnas de R2X.
+R2Submodelo(sel)
 BEGIN
- LOCAL i,j,dp,ap,ai,gp,bp,yh;
- LOCAL ym,sse,sst,ssr,det,e;
- dp:=MAKEMAT(0,R2N,p+1);
+ LOCAL i,j,q,dp,ap,ai,gp,bp;
+ LOCAL yh;
+ LOCAL ym,sse,sst,ssr,det,e,ok,v;
+ q:=SIZE(sel);
+ IF q<1 THEN RETURN {}; END;
+ ok:=R2Prepara();
+ IF ok==0 THEN RETURN {}; END;
+ dp:=MAKEMAT(0,R2N,q+1);
  FOR i FROM 1 TO R2N DO
   dp(i,1):=1;
-  FOR j FROM 1 TO p DO dp(i,j+1):=R2X(i,j); END;
+  FOR j FROM 1 TO q DO dp(i,j+1):=R2D(i,sel(j)+1); END;
  END;
  ap:=TRN(dp)*dp; det:=DET(ap);
  IF ABS(det)<0.0000000001 THEN RETURN {}; END;
- ai:=ap^(-1); gp:=TRN(dp)*R2Y; bp:=ai*gp;
+ ai:=ap^(-1); gp:=TRN(dp)*R2U; bp:=ai*gp;
  ym:=0;
- FOR i FROM 1 TO R2N DO ym:=ym+R2Y(i,1); END;
+ FOR i FROM 1 TO R2N DO ym:=ym+R2U(i,1); END;
  ym:=ym/R2N; sse:=0; sst:=0;
  FOR i FROM 1 TO R2N DO
   yh:=0;
-  FOR j FROM 1 TO p+1 DO yh:=yh+dp(i,j)*bp(j,1); END;
-  e:=R2Y(i,1)-yh; sse:=sse+e^2; sst:=sst+(R2Y(i,1)-ym)^2;
+  FOR j FROM 1 TO q+1 DO yh:=yh+dp(i,j)*bp(j,1); END;
+  e:=R2U(i,1)-yh; sse:=sse+e^2; sst:=sst+(R2U(i,1)-ym)^2;
  END;
  ssr:=sst-sse; RETURN {ssr,sse};
 END;
 
 EXPORT R2Adicion()
 BEGIN
- LOCAL ok,p,h,df,fc,fv,pv,dec;
- LOCAL res,ssri,ssrf,ssef,opciones;
+ LOCAL i,op,h,df,fc,fv,pv,dec;
+ LOCAL qf;
+ LOCAL ini,add,fin,res0,resf,ssri,ssrf,ssef;
+ LOCAL opciones,nombreIni,nombreAdd,nombreFin;
  IF R2K<2 THEN R2Aviso("Se necesitan al menos 2 variables X"); RETURN; END;
- ok:=R2Calcula();
- IF ok==0 THEN R2Aviso("Ingrese datos validos y estime el modelo"); RETURN; END;
- opciones:={};
- FOR p FROM 1 TO R2K-1 DO opciones:=CONCAT(opciones,{"Modelo inicial: X1 hasta X"+STRING(p)}); END;
- p:=R2Elige("2.6 CANTIDAD DE X EN MODELO INICIAL",opciones);
- IF p==0 THEN RETURN; END;
- h:=R2K-p; res:=R2Submodelo(p);
- IF SIZE(res)<2 THEN R2Aviso("El modelo inicial tiene colinealidad exacta"); RETURN; END;
- ssri:=res(1); ssrf:=R2SSR; ssef:=R2SSE; df:=R2N-R2K-1;
+ IF R2N<=2 THEN R2Aviso("No hay observaciones suficientes"); RETURN; END;
+ // Los dos modelos se estiman con los subconjuntos elegidos; no se exige que el modelo completo sea invertible.
+ // Primero el usuario define libremente las variables que ya estan en el modelo.
+ ini:={};
+ opciones:={"INCLUIR en modelo inicial","NO incluir"};
+ FOR i FROM 1 TO R2K DO
+  op:=R2Elige("MODELO INICIAL: variable X"+STRING(i),opciones);
+  IF op==0 THEN RETURN; END;
+  IF op==1 THEN ini:=CONCAT(ini,{i}); END;
+ END;
+ IF SIZE(ini)<1 THEN R2Aviso("Seleccione al menos una variable para el modelo inicial"); RETURN; END;
+
+ // Despues elige cuales de las variables restantes desea anadir.
+ add:={};
+ FOR i FROM 1 TO R2K DO
+  IF NOT (POS(ini,i)>0) THEN
+   op:=R2Elige("ANADIR X"+STRING(i)+" al modelo final?",{"SI, anadir","NO, dejar fuera"});
+   IF op==0 THEN RETURN; END;
+   IF op==1 THEN add:=CONCAT(add,{i}); END;
+  END;
+ END;
+ h:=SIZE(add);
+ IF h<1 THEN R2Aviso("Seleccione al menos una variable para anadir"); RETURN; END;
+ fin:=CONCAT(ini,add); qf:=SIZE(fin);
+ IF R2N<=qf+1 THEN R2Aviso("No hay grados de libertad para el modelo final"); RETURN; END;
+
+ res0:=R2Submodelo(ini);
+ IF SIZE(res0)<2 THEN R2Aviso("El modelo inicial tiene colinealidad exacta"); RETURN; END;
+ resf:=R2Submodelo(fin);
+ IF SIZE(resf)<2 THEN R2Aviso("El modelo final tiene colinealidad exacta"); RETURN; END;
+ ssri:=res0(1); ssrf:=resf(1); ssef:=resf(2); df:=R2N-qf-1;
  IF df<=0 OR ssef<=0 THEN R2Aviso("Grados de libertad o SSE final no validos"); RETURN; END;
- IF ssrf<ssri THEN R2Aviso("SSR final menor que SSR inicial; revise los datos"); RETURN; END;
+ IF ssrf<ssri-0.0000001 THEN R2Aviso("SSR final menor que SSR inicial; revise los datos"); RETURN; END;
  fv:=((ssrf-ssri)/h)/(ssef/df);
  fc:=FISHER_ICDF(h,df,1-RmAlpha); pv:=1-FISHER_CDF(h,df,fv); dec:=fv>fc;
+
+ nombreIni:=""; nombreAdd:=""; nombreFin:="";
+ FOR i FROM 1 TO SIZE(ini) DO
+  IF i>1 THEN nombreIni:=nombreIni+", "; END;
+  nombreIni:=nombreIni+"X"+STRING(ini(i));
+ END;
+ FOR i FROM 1 TO SIZE(add) DO
+  IF i>1 THEN nombreAdd:=nombreAdd+", "; END;
+  nombreAdd:=nombreAdd+"X"+STRING(add(i));
+ END;
+ FOR i FROM 1 TO SIZE(fin) DO
+  IF i>1 THEN nombreFin:=nombreFin+", "; END;
+  nombreFin:=nombreFin+"X"+STRING(fin(i));
+ END;
  R2Ver("2.6 ADICION DE VARIABLES: F PARCIAL",{
-  "Modelo inicial: X1,...,Xp (p="+STRING(p)+")",
-  "Modelo final: X1,...,Xk (k="+STRING(R2K)+")",
-  "H0: las variables añadidas no mejoran Y",
-  "H1: al menos una variable añadida mejora Y",
+  "Modelo inicial: "+nombreIni,
+  "Variables anadidas: "+nombreAdd,
+  "Modelo final: "+nombreFin,
+  "H0: las variables anadidas no mejoran Y",
+  "H1: al menos una variable anadida mejora Y",
   "H0: gamma1 = ... = gamma_h = 0",
   "Alfa = "+R2Fmt(RmAlpha,4),
-  "n = "+STRING(R2N)+" p = "+STRING(p)+" h = "+STRING(h),
+  "n = "+STRING(R2N)+" h = "+STRING(h),
   "gl error final = "+STRING(df),
   "SSR inicial = "+R2Fmt(ssri,6),
   "SSR final = "+R2Fmt(ssrf,6),
@@ -677,7 +825,7 @@ BEGIN
   "F critico = "+R2Fmt(fc,6),
   "p-valor = "+R2Fmt(pv,7),
   "Rechazar H0 si Fcalc > Fcrit",
-  IFTE(dec,"Se rechaza H0: las variables añadidas mejoran la prediccion","No se rechaza H0: no hay evidencia de mejora")
+  IFTE(dec,"Se rechaza H0: las variables anadidas mejoran la prediccion","No se rechaza H0: no hay evidencia de mejora")
  });
 END;
 
