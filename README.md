@@ -282,13 +282,13 @@ Un módulo se considera terminado solo cuando:
 | Módulo 1: Datos y modelo (`MOD1`) | Implementado en el código; pendiente de compilación y prueba final en simulador |
 | Módulo 1: submódulos 1.1 a 1.7 | Implementados: IC para β0 y β1, predicción, utilidad T, ANOVA F, prueba de linealidad y modelos exponencial/potencial. Configuración de α compartida. Pendiente de compilación y validación en simulador |
 
-| Módulo 2 | Pendiente |
+| Módulo 2: regresión lineal múltiple (`MOD2`) | Implementados 2.1 a 2.6. El menú principal (`MENUPRIN`) abre directamente cada apartado mediante `R2Abrir`; se eliminó el menú interno duplicado `R2MOD`. Pendiente de compilación y validación en HP Prime Virtual Calculator 2.4.2 |
 | Módulo 3 | Pendiente |
 | Módulo 4 | Pendiente |
 | Editor de datos tipo hoja de cálculo | Implementado en el código; pendiente de prueba en simulador |
 | Gráficas | Pendiente |
 
-**Siguiente paso:** compilar y probar `MOD1` y `MENUPRIN` en HP Prime Virtual Calculator 2.4.2, contrastar los resultados de 1.1 a 1.7 con los ejercicios de la bibliografía y corregir cualquier incompatibilidad detectada antes de iniciar el Módulo 2.
+**Siguiente paso:** actualizar los tres programas en HP Prime Virtual Calculator 2.4.2 (reemplazando las versiones anteriores) y compilar en este orden: `MOD1` → `MOD2` → `MENUPRIN`. Entrar al Módulo 2 únicamente desde `MENUPRIN`; este menú es el único punto de entrada y llama directamente a `R2Abrir(s)`. Probar los apartados 2.1 a 2.6 con ejercicios de la bibliografía, especialmente predicción y F parcial.
 
 ---
 
