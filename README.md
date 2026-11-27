@@ -282,7 +282,7 @@ Un módulo se considera terminado solo cuando:
 | Módulo 1: Datos y modelo (`MOD1`) | Implementado en el código; pendiente de compilación y prueba final en simulador |
 | Módulo 1: submódulos 1.1 a 1.7 | Implementados: IC para β0 y β1, predicción, utilidad T, ANOVA F, prueba de linealidad y modelos exponencial/potencial. Configuración de α compartida. Pendiente de compilación y validación en simulador |
 
-| Módulo 2: regresión lineal múltiple | Implementados datos matriciales, método matricial, IC para βi, pruebas individuales y poder predictivo ANOVA (hasta 2.4); pendiente de compilación y prueba en HP Prime |
+| Módulo 2 | Pendiente |
 | Módulo 3 | Pendiente |
 | Módulo 4 | Pendiente |
 | Editor de datos tipo hoja de cálculo | Implementado en el código; pendiente de prueba en simulador |
