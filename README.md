@@ -34,6 +34,7 @@ Programa para la calculadora **HP Prime (G2)** que resuelve, paso a paso y con e
 - **Gráficas** de dispersión, curva ajustada y residuos, con escalado automático a toda la pantalla.
 - **Modelos no lineales** (exponencial y potencial) en los módulos 1, 2 y 3, a elección del usuario. El modelo estimado queda activo y todos los submódulos del módulo trabajan con él.
 - **Ingreso de datos tipo hoja de cálculo:** tabla editable a pantalla completa, pensada para llenarse tan fácil como una tabla de Excel.
+- **Nivel de significancia configurable:** el valor global de α se puede cambiar desde el menú principal o desde Datos y modelo; las pruebas e intervalos del módulo usan el valor guardado.
 - **Táctil y teclado:** se maneja con flechas, `ENTER` y `ESC`, y también tocando la pantalla.
 - **Colores resaltantes y consistentes** (ver [paleta](#paleta-de-colores)).
 
@@ -279,15 +280,15 @@ Un módulo se considera terminado solo cuando:
 |---|---|
 | Menú principal (`MENUPRIN`) | Funcional en el simulador; falta verificar el táctil |
 | Módulo 1: Datos y modelo (`MOD1`) | Implementado en el código; pendiente de compilación y prueba final en simulador |
-| Módulo 1: submódulos 1.1 a 1.4 | Implementados: IC para β0, IC para β1, predicción e intervalo de predicción, utilidad mediante T. Pendiente de compilación y validación en simulador |
-| Módulo 1: submódulos 1.5 a 1.7 | Pendiente |
+| Módulo 1: submódulos 1.1 a 1.7 | Implementados: IC para β0 y β1, predicción, utilidad T, ANOVA F, prueba de linealidad y modelos exponencial/potencial. Configuración de α compartida. Pendiente de compilación y validación en simulador |
+
 | Módulo 2 | Pendiente |
 | Módulo 3 | Pendiente |
 | Módulo 4 | Pendiente |
-| Editor de datos tipo hoja de cálculo | Pendiente |
+| Editor de datos tipo hoja de cálculo | Implementado en el código; pendiente de prueba en simulador |
 | Gráficas | Pendiente |
 
-**Siguiente paso:** compilar y probar `MOD1` y `MENUPRIN` en HP Prime Virtual Calculator 2.4.2, contrastar los resultados de 1.1 a 1.4 con los ejercicios de la bibliografía y corregir cualquier incompatibilidad detectada antes de continuar con 1.5.
+**Siguiente paso:** compilar y probar `MOD1` y `MENUPRIN` en HP Prime Virtual Calculator 2.4.2, contrastar los resultados de 1.1 a 1.7 con los ejercicios de la bibliografía y corregir cualquier incompatibilidad detectada antes de iniciar el Módulo 2.
 
 ---
 
