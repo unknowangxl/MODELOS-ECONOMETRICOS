@@ -263,9 +263,9 @@ BEGIN
  LOCAL sel,res,k,r,tv,tc,df,dec;
  IF multiple==0 THEN
   IF R3CalculaSimple()==0 THEN R2Aviso("Datos insuficientes o variable constante."); RETURN; END;
-  sel:=R3Seleccion();
-  IF SIZE(sel)<>1 THEN R2Aviso("Seleccione exactamente una variable X."); RETURN; END;
-  r:=R3R(1,sel(1)+1); k:=1;
+  op:=R3EligeUnaX("VARIABLE X");
+  IF op==0 THEN RETURN; END;
+  r:=R3R(1,op+1); k:=1;
  ELSE
   sel:=R3Seleccion();
   IF SIZE(sel)==0 THEN RETURN; END;
@@ -298,9 +298,9 @@ BEGIN
  LOCAL sel,res,k,r,rho,zv,zc,dec;
  IF multiple==0 THEN
   IF R3CalculaSimple()==0 THEN R2Aviso("Datos insuficientes."); RETURN; END;
-  sel:=R3Seleccion();
-  IF SIZE(sel)<>1 THEN R2Aviso("Seleccione exactamente una variable X."); RETURN; END;
-  r:=R3R(1,sel(1)+1); k:=1;
+  op:=R3EligeUnaX("VARIABLE X");
+  IF op==0 THEN RETURN; END;
+  r:=R3R(1,op+1); k:=1;
  ELSE
   sel:=R3Seleccion(); IF SIZE(sel)==0 THEN RETURN; END;
   res:=R3ModeloCalc(sel);
@@ -354,9 +354,9 @@ BEGIN
  LOCAL sel,res,r;
  IF multiple==0 THEN
   IF R3CalculaSimple()==0 THEN R2Aviso("Datos insuficientes."); RETURN; END;
-  sel:=R3Seleccion();
-  IF SIZE(sel)<>1 THEN R2Aviso("Seleccione exactamente una variable X."); RETURN; END;
-  r:=R3R(1,sel(1)+1);
+  op:=R3EligeUnaX("VARIABLE X");
+  IF op==0 THEN RETURN; END;
+  r:=R3R(1,op+1);
   R3Intervalo(r,"3.3 INTERVALO PARA CORRELACION SIMPLE");
  ELSE
   sel:=R3Seleccion(); IF SIZE(sel)==0 THEN RETURN; END;
@@ -381,7 +381,7 @@ R3ParcialUno(conIC)
 BEGIN
  LOCAL op,target,ctrl,i,r;
  IF R3CalculaSimple()==0 THEN R2Aviso("Datos insuficientes o variable constante."); RETURN; END;
- op:=R2Elige("VARIABLE X OBJETIVO",MAKELIST("X"+STRING(K),K,1,R3K));
+ op:=R3EligeUnaX("VARIABLE X OBJETIVO");
  IF op==0 THEN RETURN; END;
  target:=op+1; ctrl:={};
  FOR i FROM 1 TO R3K DO
@@ -431,7 +431,7 @@ BEGIN
  LOCAL op,target,ctrl,base,full,res0,res1,p,h,df,fv,fc,pv,dec;
  LOCAL i,sel;
  IF R3N<5 THEN R2Aviso("Primero importe o ingrese datos."); RETURN; END;
- op:=R2Elige("VARIABLE X A PROBAR",MAKELIST("X"+STRING(K),K,1,R3K));
+ op:=R3EligeUnaX("VARIABLE X A PROBAR");
  IF op==0 THEN RETURN; END;
  target:=op; ctrl:={};
  FOR i FROM 1 TO R3K DO
