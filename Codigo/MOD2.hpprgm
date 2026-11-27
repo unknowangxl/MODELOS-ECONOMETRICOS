@@ -583,28 +583,7 @@ BEGIN
  });
 END;
 
-EXPORT R2MOD()
-BEGIN
- LOCAL op,fin;
- DIMGROB_P(G1,320,240,RGB(8,16,40));
- fin:=0;
- REPEAT
-  op:=R2Elige("MODULO 2: REGRESION MULTIPLE",{
-   "Datos y modelo (editar observaciones)",
-   "2.1 Metodo matricial",
-   "2.2 Intervalos de confianza beta_i",
-   "2.3 Pruebas de hipotesis beta_i",
-   "2.4 Poder predictivo (ANOVA)",
-   "2.5 Prediccion",
-   "2.6 Adicion de variables (F parcial)",
-   "Volver"
-  });
-  IF op==1 THEN R2Datos(); END;
-  IF op==2 THEN R2Metodo(); END;
-  IF op==3 THEN R2IC(); END;
-  IF op==4 THEN R2Prueba(); END;
-  IF op==5 THEN R2ANOVA(); END;
-  IF op==6 THEN R2Predice(); END;
+R2Predice(); END;
   IF op==7 THEN R2Adicion(); END;
   IF op==8 OR op==0 THEN fin:=1; END;
  UNTIL fin==1;
@@ -613,7 +592,8 @@ END;
 
 R2Predice()
 BEGIN
- LOCAL ok,i,v,vec,tmp,yh,h,df,tc,m1,m2,l1,u1,l2,u2;
+ LOCAL ok,i,v,vec,tmp,yh,h,df;
+ LOCAL tc,m1,m2,l1,u1,l2,u2;
  ok:=R2Calcula();
  IF ok==0 THEN R2Aviso("Ingrese datos validos y estime el modelo"); RETURN; END;
  vec:=MAKEMAT(0,R2K+1,1); vec(1,1):=1;
@@ -623,7 +603,7 @@ BEGIN
   IF R2Cancel==1 THEN RETURN; END;
   vec(i+1,1):=v;
  END;
- yh:=(TRN(vec)*R2B)(1,1);
+ tmp:=TRN(vec)*R2B; yh:=tmp(1,1);
  tmp:=TRN(vec)*R2AI*vec; h:=tmp(1,1);
  IF h<0 THEN IF ABS(h)<0.0000001 THEN h:=0; ELSE R2Aviso("Error numerico en X0' A^-1 X0"); RETURN; END; END;
  df:=R2DF; tc:=STUDENT_ICDF(df,1-RmAlpha/2);
@@ -647,7 +627,8 @@ END;
 
 R2Submodelo(p)
 BEGIN
- LOCAL i,j,dp,ap,ai,gp,bp,yh,ym;
+ LOCAL i,j,dp,ap,ai,gp,bp,yh;
+ LOCAL ym;
  LOCAL sse,sst,ssr,det,e;
  dp:=MAKEMAT(0,R2N,p+1);
  FOR i FROM 1 TO R2N DO
@@ -670,7 +651,8 @@ END;
 
 EXPORT R2Adicion()
 BEGIN
- LOCAL ok,p,h,df,fc,fv,pv,dec,res,ssri,ssrf,ssef;
+ LOCAL ok,p,h,df,fc,fv,pv,dec;
+ LOCAL res,ssri,ssrf,ssef;
  LOCAL opciones,ini,fin;
  IF R2K<2 THEN R2Aviso("Se necesitan al menos 2 variables X"); RETURN; END;
  ok:=R2Calcula();
@@ -709,7 +691,28 @@ BEGIN
 END;
 
 
-EXPORT R2Abrir(s)
+EXPORT R2MOD()
+BEGIN
+ LOCAL op,fin;
+ DIMGROB_P(G1,320,240,RGB(8,16,40));
+ fin:=0;
+ REPEAT
+  op:=R2Elige("MODULO 2: REGRESION MULTIPLE",{
+   "Datos y modelo (editar observaciones)",
+   "2.1 Metodo matricial",
+   "2.2 Intervalos de confianza beta_i",
+   "2.3 Pruebas de hipotesis beta_i",
+   "2.4 Poder predictivo (ANOVA)",
+   "2.5 Prediccion",
+   "2.6 Adicion de variables (F parcial)",
+   "Volver"
+  });
+  IF op==1 THEN R2Datos(); END;
+  IF op==2 THEN R2Metodo(); END;
+  IF op==3 THEN R2IC(); END;
+  IF op==4 THEN R2Prueba(); END;
+  IF op==5 THEN R2ANOVA(); END;
+  IF op==6 THEN EXPORT R2Abrir(s)
 BEGIN
  IF s==1 THEN R2Datos(); END;
  IF s==2 THEN R2Metodo(); END;
