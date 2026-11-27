@@ -42,7 +42,7 @@ END;
 Pie(t)
 BEGIN
   RECT_P(G1,0,219,319,239,RGB(30,40,80),RGB(30,40,80));
-  TEXTOUT_P(t,G1,6,223,6,RGB(200,220,255));
+  TEXTOUT_P(t,G1,6,223,3,RGB(200,220,255));
 END;
 
 PieSub(s,n,col)
@@ -50,9 +50,9 @@ BEGIN
   RECT_P(G1,0,219,105,239,RGB(255,255,255),RGB(30,40,80));
   RECT_P(G1,107,219,212,239,RGB(255,255,255),RGB(120,30,30));
   RECT_P(G1,214,219,319,239,RGB(255,255,255),RGB(30,40,80));
-  TEXTOUT_P("SUBIR",G1,28,222,6,RGB(255,255,255));
-  TEXTOUT_P("VOLVER",G1,128,222,6,RGB(255,255,255));
-  TEXTOUT_P("BAJAR",G1,242,222,6,RGB(255,255,255));
+  TEXTOUT_P("SUBIR",G1,28,222,3,RGB(255,255,255));
+  TEXTOUT_P("VOLVER",G1,128,222,3,RGB(255,255,255));
+  TEXTOUT_P("BAJAR",G1,242,222,3,RGB(255,255,255));
 END;
 
 DibujaPrincipal(m,mods,cols)
@@ -71,7 +71,7 @@ BEGIN
     RECT_P(G1,12,y+5,42,y+35,cols(i),cols(i));
     TEXTOUT_P(STRING(i),G1,22,y+9,3,RGB(0,0,0));
     TEXTOUT_P("MODULO "+STRING(i),G1,52,y+3,6,cols(i));
-    TEXTOUT_P(mods(i),G1,52,y+19,5,RGB(255,255,255));
+    TEXTOUT_P(mods(i),G1,52,y+19,3,RGB(255,255,255));
   END;
   Pie("Toca un modulo o usa flechas + ENTER");
   BLIT_P(G0,G1);
@@ -90,10 +90,10 @@ BEGIN
       y:=30+(i-1)*24;
       IF idx==s THEN
         RECT_P(G1,4,y,315,y+22,RGB(255,255,255),col);
-        TEXTOUT_P(items(idx),G1,10,y+4,5,RGB(0,0,0));
+        TEXTOUT_P(items(idx),G1,10,y+4,3,RGB(0,0,0));
       ELSE
         RECT_P(G1,4,y,315,y+22,RGB(50,60,100),RGB(16,28,64));
-        TEXTOUT_P(items(idx),G1,10,y+4,5,RGB(255,255,255));
+        TEXTOUT_P(items(idx),G1,10,y+4,3,RGB(255,255,255));
       END;
     END;
   END;
@@ -107,9 +107,9 @@ BEGIN
 
   RECT_P(G1,0,0,319,239,RGB(8,16,40),RGB(8,16,40));
   Cabecera("SUBMODULO",col,4);
-  TEXTOUT_P(tit,G1,10,50,4,RGB(255,255,255));
+  TEXTOUT_P(tit,G1,10,50,3,RGB(255,255,255));
   RECT_P(G1,10,100,309,170,col,RGB(16,28,64));
-  TEXTOUT_P("EN CONSTRUCCION",G1,62,125,4,RGB(255,215,0));
+  TEXTOUT_P("EN CONSTRUCCION",G1,62,125,3,RGB(255,215,0));
   Pie("Toca la pantalla o pulsa una tecla: volver");
   BLIT_P(G0,G1);
   k:=EsperaTecla();
