@@ -278,15 +278,16 @@ Un módulo se considera terminado solo cuando:
 | Componente | Estado |
 |---|---|
 | Menú principal (`MENUPRIN`) | Funcional en el simulador; falta verificar el táctil |
-| Módulo 1: Datos y modelo (`MOD1`) | En corrección: errores de sintaxis por resolver |
-| Módulo 1: submódulos 1.1 a 1.7 | Pendiente |
+| Módulo 1: Datos y modelo (`MOD1`) | Implementado en el código; pendiente de compilación y prueba final en simulador |
+| Módulo 1: submódulos 1.1 a 1.4 | Implementados: IC para β0, IC para β1, predicción e intervalo de predicción, utilidad mediante T. Pendiente de compilación y validación en simulador |
+| Módulo 1: submódulos 1.5 a 1.7 | Pendiente |
 | Módulo 2 | Pendiente |
 | Módulo 3 | Pendiente |
 | Módulo 4 | Pendiente |
 | Editor de datos tipo hoja de cálculo | Pendiente |
 | Gráficas | Pendiente |
 
-**Siguiente paso:** corregir `MOD1` según las normas anteriores (globales declaradas con `EXPORT`, `LOCAL` de máximo 8 variables), con editor de datos tipo tabla y fuentes más pequeñas, y luego implementar los submódulos 1.1 y 1.2.
+**Siguiente paso:** compilar y probar `MOD1` y `MENUPRIN` en HP Prime Virtual Calculator 2.4.2, contrastar los resultados de 1.1 a 1.4 con los ejercicios de la bibliografía y corregir cualquier incompatibilidad detectada antes de continuar con 1.5.
 
 ---
 
