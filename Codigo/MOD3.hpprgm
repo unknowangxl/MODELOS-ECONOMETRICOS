@@ -1,0 +1,571 @@
+// MODULO 3 - ANALISIS DE CORRELACION LINEAL
+// DEPENDENCIAS: MOD1 (RmAlpha), MOD2 (R2Elige, R2Ver, R2VerM,
+// R2Aviso, R2Fmt, R2PublicaDatos, R2NumEdit).
+// ORDEN: MOD1 -> MOD2 -> MOD3 -> MENUPRIN.
+// Los datos locales son independientes de MOD2. El espacio compartido
+// solo se usa al importar/exportar observaciones originales.
+
+EXPORT R3N:=0;
+EXPORT R3K:=0;
+EXPORT R3X:=MAKEMAT(0,30,5);
+EXPORT R3Y:=MAKEMAT(0,30,1);
+EXPORT R3R:=MAKEMAT(0,6,6);
+EXPORT R3RValido:=0;
+EXPORT R3Modelo:={};
+EXPORT R3UltimoR:=0;
+EXPORT R3UltimoR2:=0;
+EXPORT R3UltimoK:=0;
+EXPORT R3Cancel:=0;
+
+// Devuelve el nombre de una variable: 1=Y, 2=X1, etc.
+R3Nombre(i)
+BEGIN
+ IF i==1 THEN RETURN "Y"; END;
+ RETURN "X"+STRING(i-1);
+END;
+
+// Copia los datos originales del espacio compartido a la tabla local.
+EXPORT R3Importa()
+BEGIN
+ LOCAL i,j,op;
+ IF RComValido<>1 THEN
+  R2Aviso("No hay datos compartidos. Primero exporte una tabla desde MOD2.");
+  RETURN;
+ END;
+ IF RComN<5 OR RComN>30 OR RComK<1 OR RComK>5 THEN
+  R2Aviso("Las dimensiones compartidas no son validas.");
+  RETURN;
+ END;
+ op:=R2Elige("IMPORTAR DATOS A MOD3",{"SI, reemplazar los datos locales","NO, conservar datos locales"});
+ IF op<>1 THEN RETURN; END;
+ R3N:=RComN; R3K:=RComK;
+ R3X:=MAKEMAT(0,30,5); R3Y:=MAKEMAT(0,30,1);
+ FOR i FROM 1 TO R3N DO
+  R3Y(i,1):=RComY(i,1);
+  FOR j FROM 1 TO R3K DO R3X(i,j):=RComX(i,j); END;
+ END;
+ R3RValido:=0; R3Modelo:={};
+ R2Aviso("Datos originales importados a MOD3 correctamente.");
+END;
+
+// Publica unicamente los datos originales locales.
+EXPORT R3Exporta()
+BEGIN
+ IF R3N<5 OR R3K<1 THEN
+  R2Aviso("Primero importe o ingrese datos validos en MOD3.");
+  RETURN;
+ END;
+ IF R2PublicaDatos(R3N,R3K,R3X,R3Y)==1 THEN
+  R2Aviso("Datos originales de MOD3 publicados en el espacio comun.");
+ ELSE
+  R2Aviso("No fue posible publicar los datos.");
+ END;
+END;
+
+// Carga un nuevo conjunto de dimensiones y permite introducir los datos.
+R3Nuevo()
+BEGIN
+ LOCAL op,n,k,i,j,v;
+ op:=R2Elige("NUMERO DE VARIABLES X",{"1 variable","2 variables","3 variables","4 variables","5 variables"});
+ IF op==0 THEN RETURN; END;
+ k:=op;
+ op:=R2Elige("NUMERO DE OBSERVACIONES",{"5","8","10","12","15","20","25","30"});
+ IF op==0 THEN RETURN; END;
+ n:={5,8,10,12,15,20,25,30}(op);
+ IF n<=k+2 THEN R2Aviso("Se requieren mas observaciones que parametros."); RETURN; END;
+ R3N:=n; R3K:=k;
+ R3X:=MAKEMAT(0,30,5); R3Y:=MAKEMAT(0,30,1);
+ FOR i FROM 1 TO n DO
+  FOR j FROM 1 TO k DO
+   v:=R2NumEdit("Fila "+STRING(i)+", X"+STRING(j),0);
+   IF R2Cancel==1 THEN RETURN; END;
+   R3X(i,j):=v;
+  END;
+  v:=R2NumEdit("Fila "+STRING(i)+", Y",0);
+  IF R2Cancel==1 THEN RETURN; END;
+  R3Y(i,1):=v;
+ END;
+ R3RValido:=0; R3Modelo:={};
+ R2Aviso("Tabla local de MOD3 creada.");
+END;
+
+// Editor simple de una celda; conserva todas las filas y columnas.
+R3Editar()
+BEGIN
+ LOCAL i,j,op,v;
+ IF R3N<5 THEN R2Aviso("No hay datos locales. Importe o cree una tabla."); RETURN; END;
+ i:=R2Elige("SELECCIONE FILA",MAKELIST(STRING(K),K,1,R3N));
+ IF i==0 THEN RETURN; END;
+ op:=R2Elige("VARIABLE A EDITAR",{"Y","X1","X2","X3","X4","X5"});
+ IF op==0 OR op>R3K+1 THEN RETURN; END;
+ IF op==1 THEN v:=R2NumEdit("Y fila "+STRING(i),R3Y(i,1)); ELSE v:=R2NumEdit("X"+STRING(op-1)+" fila "+STRING(i),R3X(i,op-1)); END;
+ IF R2Cancel==1 THEN RETURN; END;
+ IF op==1 THEN R3Y(i,1):=v; ELSE R3X(i,op-1):=v; END;
+ R3RValido:=0;
+END;
+
+// Construye la matriz de correlacion simple de Y y todas las X.
+R3CalculaSimple()
+BEGIN
+ LOCAL i,j,a,b,sx,sy,sxx,syy,sxy,r;
+ LOCAL z;
+ IF R3N<5 OR R3K<1 THEN RETURN 0; END;
+ z:=MAKEMAT(0,R3N,R3K+1);
+ FOR i FROM 1 TO R3N DO
+  z(i,1):=R3Y(i,1);
+  FOR j FROM 1 TO R3K DO z(i,j+1):=R3X(i,j); END;
+ END;
+ R3R:=MAKEMAT(0,R3K+1,R3K+1);
+ FOR a FROM 1 TO R3K+1 DO
+  FOR b FROM 1 TO R3K+1 DO
+   sx:=0; sy:=0; sxx:=0; syy:=0; sxy:=0;
+   FOR i FROM 1 TO R3N DO
+    sx:=sx+z(i,a); sy:=sy+z(i,b);
+    sxx:=sxx+z(i,a)^2; syy:=syy+z(i,b)^2;
+    sxy:=sxy+z(i,a)*z(i,b);
+   END;
+   sxx:=sxx-sx^2/R3N; syy:=syy-sy^2/R3N;
+   sxy:=sxy-sx*sy/R3N;
+   IF sxx<=0 OR syy<=0 THEN RETURN 0; END;
+   r:=sxy/SQRT(sxx*syy);
+   R3R(a,b):=r;
+  END;
+ END;
+ R3RValido:=1;
+ RETURN 1;
+END;
+
+// Muestra una matriz real en pantalla usando el visor matricial de MOD2.
+R3VerMatriz(tit,m,n)
+BEGIN
+ R2Ver(tit,{"Matriz de correlacion","Filas y columnas: Y, X1, X2, ..."});
+ R2VerM(tit,m,n,n);
+END;
+
+// Calcula SSR, SSE y SST de una regresion lineal con el subconjunto sel.
+// sel contiene indices X originales (1..R3K).
+R3ModeloCalc(sel)
+BEGIN
+ LOCAL q,i,j,xx,aa,gg,bb,det,yh,ym,sse,sst,ssr,e;
+ LOCAL ans;
+ q:=SIZE(sel);
+ IF q<1 OR R3N<=q+1 THEN RETURN {}; END;
+ xx:=MAKEMAT(0,R3N,q+1);
+ FOR i FROM 1 TO R3N DO
+  xx(i,1):=1;
+  FOR j FROM 1 TO q DO xx(i,j+1):=R3X(i,sel(j)); END;
+ END;
+ aa:=TRN(xx)*xx;
+ det:=DET(aa);
+ IF ABS(det)<0.0000000001 THEN RETURN {}; END;
+ gg:=TRN(xx)*R3Y;
+ bb:=aa^(-1)*gg;
+ ym:=0;
+ FOR i FROM 1 TO R3N DO ym:=ym+R3Y(i,1); END;
+ ym:=ym/R3N; sse:=0; sst:=0;
+ FOR i FROM 1 TO R3N DO
+  yh:=0;
+  FOR j FROM 1 TO q+1 DO yh:=yh+xx(i,j)*bb(j,1); END;
+  e:=R3Y(i,1)-yh; sse:=sse+e^2;
+  sst:=sst+(R3Y(i,1)-ym)^2;
+ END;
+ ssr:=sst-sse;
+ IF sst<=0 OR sse<0 THEN RETURN {}; END;
+ ans:={ssr,sse,sst,bb};
+ RETURN ans;
+END;
+
+// Correlacion parcial entre las variables i,j controlando las variables ctrl.
+// Se obtiene mediante la inversa de la matriz de correlacion del subconjunto.
+R3Parcial(i,j,ctrl)
+BEGIN
+ LOCAL ids,m,q,a,b,p,det,r;
+ ids:=CONCAT({i,j},ctrl);
+ q:=SIZE(ids);
+ IF R3RValido==0 THEN IF R3CalculaSimple()==0 THEN RETURN 999; END; END;
+ m:=MAKEMAT(0,q,q);
+ FOR a FROM 1 TO q DO
+  FOR b FROM 1 TO q DO m(a,b):=R3R(ids(a),ids(b)); END;
+ END;
+ det:=DET(m);
+ IF ABS(det)<0.0000000001 THEN RETURN 999; END;
+ p:=m^(-1);
+ IF p(1,1)<=0 OR p(2,2)<=0 THEN RETURN 999; END;
+ r:=-p(1,2)/SQRT(p(1,1)*p(2,2));
+ RETURN r;
+END;
+
+// Matriz de correlacion parcial para todas las variables no controladas.
+R3MatrizParcial(ctrl)
+BEGIN
+ LOCAL ids,q,i,j,a,b,r,m;
+ ids:={};
+ FOR i FROM 1 TO R3K+1 DO
+  IF NOT(POS(ctrl,i)>0) THEN ids:=CONCAT(ids,{i}); END;
+ END;
+ q:=SIZE(ids);
+ IF q<2 THEN RETURN {}; END;
+ m:=MAKEMAT(0,q,q);
+ FOR i FROM 1 TO q DO
+  FOR j FROM 1 TO q DO
+   IF i==j THEN m(i,j):=1;
+   ELSE
+    r:=R3Parcial(ids(i),ids(j),ctrl);
+    IF ABS(r)>1.000001 THEN RETURN {}; END;
+    m(i,j):=r;
+   END;
+  END;
+ END;
+ RETURN {m,ids};
+END;
+
+// Seleccion libre de variables X para una estimacion multiple.
+R3Seleccion()
+BEGIN
+ LOCAL sel,i,op;
+ sel:={};
+ FOR i FROM 1 TO R3K DO
+  op:=R2Elige("INCLUIR X"+STRING(i)+"?",{"SI, incluir","NO, excluir"});
+  IF op==0 THEN RETURN {}; END;
+  IF op==1 THEN sel:=CONCAT(sel,{i}); END;
+ END;
+ RETURN sel;
+END;
+
+// Estima correlacion multiple y determinacion para el conjunto seleccionado.
+R3Multiple()
+BEGIN
+ LOCAL sel,res,r,r2,q;
+ sel:=R3Seleccion();
+ IF SIZE(sel)==0 THEN RETURN; END;
+ res:=R3ModeloCalc(sel);
+ IF SIZE(res)<3 THEN R2Aviso("Modelo singular o sin grados de libertad."); RETURN; END;
+ r2:=res(1)/res(3); r:=SQRT(MAX(0,MIN(1,r2))); q:=SIZE(sel);
+ R3Modelo:=sel; R3UltimoR:=r; R3UltimoR2:=r2; R3UltimoK:=q;
+ R2Ver("3.5 Y 3.6 CORRELACION MULTIPLE",{
+  "Variables incluidas: "+STRING(sel),
+  "n = "+STRING(R3N)+"   k = "+STRING(q),
+  "SSR = "+R2Fmt(res(1),6),
+  "SSE = "+R2Fmt(res(2),6),
+  "SST = "+R2Fmt(res(3),6),
+  "R² = SSR/SST = "+R2Fmt(r2,6),
+  "R = raiz(R²) = "+R2Fmt(r,6),
+  "R mide la correlacion de Y con Y estimada.",
+  "R² expresa la proporcion de variacion de Y explicada."
+ });
+END;
+
+// Prueba T para correlacion simple o multiple.
+R3PruebaT(multiple)
+BEGIN
+ LOCAL sel,res,k,r,tv,tc,df,dec;
+ IF multiple==0 THEN
+  IF R3CalculaSimple()==0 THEN R2Aviso("Datos insuficientes o variable constante."); RETURN; END;
+  sel:=R3Seleccion();
+  IF SIZE(sel)<>1 THEN R2Aviso("Seleccione exactamente una variable X."); RETURN; END;
+  r:=R3R(1,sel(1)+1); k:=1;
+ ELSE
+  sel:=R3Seleccion();
+  IF SIZE(sel)==0 THEN RETURN; END;
+  res:=R3ModeloCalc(sel);
+  IF SIZE(res)<3 THEN R2Aviso("Modelo singular."); RETURN; END;
+  r:=SQRT(MAX(0,res(1)/res(3))); k:=SIZE(sel);
+ END;
+ df:=R3N-k-1;
+ IF df<=0 OR ABS(r)>=1 THEN R2Aviso("No hay grados de libertad o la correlacion es perfecta."); RETURN; END;
+ tv:=r*SQRT(df)/SQRT(1-r^2);
+ tc:=STUDENT_ICDF(df,1-RmAlpha/2); dec:=ABS(tv)>tc;
+ R2Ver("INFERENCIA ESTADISTICA: PRUEBA T",{
+  IFTE(multiple==0,"Correlacion simple Y con "+R3Nombre(sel(1)+1),"Correlacion multiple con "+STRING(sel)),
+  "H0: rho = 0",
+  "H1: rho <> 0",
+  "Alfa = "+R2Fmt(RmAlpha,4),
+  "r estimado = "+R2Fmt(r,6),
+  "T = r*raiz(n-k-1)/raiz(1-r²)",
+  "T calculado = "+R2Fmt(tv,6),
+  "gl = n-k-1 = "+STRING(df),
+  "T critico bilateral = +/- "+R2Fmt(tc,6),
+  "Rechazar H0 si |Tcalc| > Tcrit",
+  IFTE(dec,"Se rechaza H0: correlacion significativa","No se rechaza H0")
+ });
+END;
+
+// Prueba Z de Fisher para un valor especifico de rho (simple o multiple).
+R3PruebaZ(multiple)
+BEGIN
+ LOCAL sel,res,k,r,rho,zv,zc,dec;
+ IF multiple==0 THEN
+  IF R3CalculaSimple()==0 THEN R2Aviso("Datos insuficientes."); RETURN; END;
+  sel:=R3Seleccion();
+  IF SIZE(sel)<>1 THEN R2Aviso("Seleccione exactamente una variable X."); RETURN; END;
+  r:=R3R(1,sel(1)+1); k:=1;
+ ELSE
+  sel:=R3Seleccion(); IF SIZE(sel)==0 THEN RETURN; END;
+  res:=R3ModeloCalc(sel);
+  IF SIZE(res)<3 THEN R2Aviso("Modelo singular."); RETURN; END;
+  r:=SQRT(MAX(0,res(1)/res(3))); k:=SIZE(sel);
+ END;
+ rho:=R2NumEdit("Valor especifico rho0 (-1 a 1)",0);
+ IF R2Cancel==1 THEN RETURN; END;
+ IF ABS(rho)>=1 OR ABS(r)>=1 THEN R2Aviso("rho y r deben estar entre -1 y 1."); RETURN; END;
+ zv:=SQRT(R3N-3)/2*LN(((1+r)*(1-rho))/((1-r)*(1+rho)));
+ zc:=NORM_ICDF(0,1,1-RmAlpha/2); dec:=ABS(zv)>zc;
+ R2Ver("PRUEBA Z PARA VALOR ESPECIFICO",{
+  "H0: rho = "+R2Fmt(rho,5),
+  "H1: rho <> "+R2Fmt(rho,5),
+  "r estimado = "+R2Fmt(r,6),
+  "Z = raiz(n-3)/2 * ln[((1+r)(1-rho0))/((1-r)(1+rho0))]",
+  "Z calculado = "+R2Fmt(zv,6),
+  "Z critico = +/- "+R2Fmt(zc,6),
+  "Alfa = "+R2Fmt(RmAlpha,4),
+  IFTE(dec,"Se rechaza H0","No se rechaza H0")
+ });
+END;
+
+// Intervalo de confianza de Fisher para correlacion simple/multiple/parcial.
+R3Intervalo(r,tit)
+BEGIN
+ LOCAL zc,a,b,li,ls;
+ IF ABS(r)>=1 THEN R2Aviso("No se puede construir el intervalo si |r|=1."); RETURN; END;
+ IF R3N<=3 THEN R2Aviso("Se requieren mas de 3 observaciones."); RETURN; END;
+ zc:=NORM_ICDF(0,1,1-RmAlpha/2);
+ a:=0.5*LN((1+r)/(1-r))-zc/SQRT(R3N-3);
+ b:=0.5*LN((1+r)/(1-r))+zc/SQRT(R3N-3);
+ li:=(EXP(2*a)-1)/(EXP(2*a)+1);
+ ls:=(EXP(2*b)-1)/(EXP(2*b)+1);
+ R2Ver(tit,{
+  "Confianza = "+R2Fmt(100*(1-RmAlpha),2)+"%",
+  "r estimado = "+R2Fmt(r,6),
+  "A = 1/2 ln((1+r)/(1-r)) - z0/raiz(n-3)",
+  "B = 1/2 ln((1+r)/(1-r)) + z0/raiz(n-3)",
+  "z0 = "+R2Fmt(zc,6),
+  "A = "+R2Fmt(a,6),
+  "B = "+R2Fmt(b,6),
+  "LI = (exp(2A)-1)/(exp(2A)+1) = "+R2Fmt(li,6),
+  "LS = (exp(2B)-1)/(exp(2B)+1) = "+R2Fmt(ls,6),
+  "P(LI <= rho <= LS) = "+R2Fmt(1-RmAlpha,4)
+ });
+END;
+
+R3IC(multiple)
+BEGIN
+ LOCAL sel,res,r;
+ IF multiple==0 THEN
+  IF R3CalculaSimple()==0 THEN R2Aviso("Datos insuficientes."); RETURN; END;
+  sel:=R3Seleccion();
+  IF SIZE(sel)<>1 THEN R2Aviso("Seleccione exactamente una variable X."); RETURN; END;
+  r:=R3R(1,sel(1)+1);
+  R3Intervalo(r,"3.3 INTERVALO PARA CORRELACION SIMPLE");
+ ELSE
+  sel:=R3Seleccion(); IF SIZE(sel)==0 THEN RETURN; END;
+  res:=R3ModeloCalc(sel);
+  IF SIZE(res)<3 THEN R2Aviso("Modelo singular."); RETURN; END;
+  r:=SQRT(MAX(0,res(1)/res(3)));
+  R3Intervalo(r,"3.9 INTERVALO PARA CORRELACION MULTIPLE");
+ END;
+END;
+
+// 3.4 matriz de correlacion lineal simple.
+R3Simple()
+BEGIN
+ LOCAL ok;
+ ok:=R3CalculaSimple();
+ IF ok==0 THEN R2Aviso("Datos insuficientes o existe una variable constante."); RETURN; END;
+ R2VerM("3.4 MATRIZ DE CORRELACION SIMPLE",R3R,R3K+1,R3K+1);
+END;
+
+// 3.10 coeficiente parcial con variable objetivo y controles elegidos libremente.
+R3ParcialUno()
+BEGIN
+ LOCAL op,target,ctrl,i,r;
+ IF R3CalculaSimple()==0 THEN R2Aviso("Datos insuficientes o variable constante."); RETURN; END;
+ op:=R2Elige("VARIABLE X OBJETIVO",MAKELIST("X"+STRING(K),K,1,R3K));
+ IF op==0 THEN RETURN; END;
+ target:=op+1; ctrl:={};
+ FOR i FROM 1 TO R3K DO
+  IF i<>op THEN
+   op:=R2Elige("CONTROLAR X"+STRING(i)+"?",{"SI, controlar","NO"});
+   IF op==0 THEN RETURN; END;
+   IF op==1 THEN ctrl:=CONCAT(ctrl,{i+1}); END;
+  END;
+ END;
+ IF SIZE(ctrl)==0 THEN r:=R3R(1,target); ELSE r:=R3Parcial(1,target,ctrl); END;
+ IF ABS(r)>1.000001 THEN R2Aviso("No se pudo calcular: matriz singular."); RETURN; END;
+ R2Ver("3.10 CORRELACION PARCIAL SIMPLE",{
+  "Variable objetivo: "+R3Nombre(target),
+  "Variables de control: "+STRING(ctrl),
+  "r parcial = "+R2Fmt(r,7),
+  "Mide la relacion Y-X despues de controlar las variables elegidas.",
+  "Valor entre -1 y 1."
+ });
+ R3Intervalo(r,"3.13 INTERVALO PARA CORRELACION PARCIAL");
+END;
+
+// 3.11 matriz parcial con seleccion libre de variables de control.
+R3ParcialMatriz()
+BEGIN
+ LOCAL ctrl,i,op,res,m,ids;
+ IF R3CalculaSimple()==0 THEN R2Aviso("Datos insuficientes o variable constante."); RETURN; END;
+ ctrl:={};
+ FOR i FROM 1 TO R3K DO
+  op:=R2Elige("CONTROLAR X"+STRING(i)+"?",{"SI, controlar","NO"});
+  IF op==0 THEN RETURN; END;
+  IF op==1 THEN ctrl:=CONCAT(ctrl,{i+1}); END;
+ END;
+ res:=R3MatrizParcial(ctrl);
+ IF SIZE(res)<2 THEN R2Aviso("No se pudo calcular: matriz singular o faltan variables."); RETURN; END;
+ m:=res(1); ids:=res(2);
+ R2Ver("3.11 MATRIZ DE CORRELACION PARCIAL",{
+  "Variables de control: "+STRING(ctrl),
+  "Variables restantes: "+STRING(ids),
+  "Elementos fuera de diagonal: correlaciones parciales."
+ });
+ R2VerM("MATRIZ PARCIAL",m,SIZE(ids),SIZE(ids));
+END;
+
+// 3.12 prueba F parcial: incorporar una X a las variables de control.
+R3PruebaParcial()
+BEGIN
+ LOCAL op,target,ctrl,base,full,res0,res1,p,h,df,fv,fc,pv,dec;
+ LOCAL i,sel;
+ IF R3N<5 THEN R2Aviso("Primero importe o ingrese datos."); RETURN; END;
+ op:=R2Elige("VARIABLE X A PROBAR",MAKELIST("X"+STRING(K),K,1,R3K));
+ IF op==0 THEN RETURN; END;
+ target:=op; ctrl:={};
+ FOR i FROM 1 TO R3K DO
+  IF i<>target THEN
+   op:=R2Elige("X"+STRING(i)+" YA ESTA EN EL MODELO?",{"SI","NO"});
+   IF op==0 THEN RETURN; END;
+   IF op==1 THEN ctrl:=CONCAT(ctrl,{i}); END;
+  END;
+ END;
+ base:=R3ModeloCalc(ctrl);
+ full:=CONCAT(ctrl,{target});
+ res1:=R3ModeloCalc(full);
+ IF SIZE(res1)<3 THEN R2Aviso("Modelo ampliado singular o sin grados de libertad."); RETURN; END;
+ IF SIZE(ctrl)==0 THEN
+  res0:={0,0,0};
+ ELSE
+  res0:=base;
+  IF SIZE(res0)<3 THEN R2Aviso("Modelo de control singular."); RETURN; END;
+ END;
+ p:=SIZE(ctrl); h:=1; df:=R3N-(p+h+1);
+ IF df<=0 OR res1(2)<=0 THEN R2Aviso("No hay grados de libertad o SSE no valido."); RETURN; END;
+ fv:=(res1(1)-res0(1))/(res1(2)/df);
+ fc:=FISHER_ICDF(h,df,1-RmAlpha); pv:=1-FISHER_CDF(h,df,fv); dec:=fv>fc;
+ R2Ver("3.12 INFERENCIA PARCIAL: PRUEBA F",{
+  "Variable probada: X"+STRING(target),
+  "Variables de control: "+STRING(ctrl),
+  "H0: la adicion de X"+STRING(target)+" no mejora Y",
+  "H1: la adicion de X"+STRING(target)+" mejora Y",
+  "F = [SSR(completo)-SSR(control)]/[SSE(completo)/gl]",
+  "SSR control = "+R2Fmt(res0(1),6),
+  "SSR completo = "+R2Fmt(res1(1),6),
+  "SSE completo = "+R2Fmt(res1(2),6),
+  "p = "+STRING(p)+"   h = 1   gl error = "+STRING(df),
+  "F calculado = "+R2Fmt(fv,6),
+  "F critico = "+R2Fmt(fc,6),
+  "p-valor = "+R2Fmt(pv,7),
+  IFTE(dec,"Se rechaza H0: la variable mejora la prediccion","No se rechaza H0: no hay evidencia de mejora")
+ });
+END;
+
+// Busca el mejor modelo siguiendo el procedimiento progresivo del Tema 3.
+// En cada paso selecciona la mayor correlacion parcial absoluta y la contrasta con F.
+R3Mejor()
+BEGIN
+ LOCAL ok,sel,rest,i,j,best,bestR,r,res0,res1,df,fv,fc,pv,dec;
+ LOCAL q,nom,txt,seguir,step,ctrl,lista;
+ IF R3CalculaSimple()==0 THEN R2Aviso("Datos insuficientes o variable constante."); RETURN; END;
+ best:=0; bestR:=0;
+ FOR i FROM 1 TO R3K DO
+  r:=ABS(R3R(1,i+1));
+  IF r>bestR THEN bestR:=r; best:=i; END;
+ END;
+ sel:={best}; rest:={};
+ FOR i FROM 1 TO R3K DO IF i<>best THEN rest:=CONCAT(rest,{i}); END; END;
+ res0:=R3ModeloCalc(sel);
+ IF SIZE(res0)<3 THEN R2Aviso("Modelo inicial singular."); RETURN; END;
+ df:=R3N-2;
+ IF df<=0 OR res0(2)<=0 THEN R2Aviso("No hay grados de libertad."); RETURN; END;
+ fv:=res0(1)/(res0(2)/df);
+ fc:=FISHER_ICDF(1,df,1-RmAlpha); dec:=fv>fc;
+ txt:={"MEJOR MODELO DE PRIMER ORDEN","Criterio: sencillez y alto poder predictivo",
+  "Inicio: mayor correlacion simple absoluta con Y",
+  "Primera variable: X"+STRING(best),
+  "r simple = "+R2Fmt(R3R(1,best+1),6),
+  "F inicial = "+R2Fmt(fv,6)+"   F critico = "+R2Fmt(fc,6),
+  IFTE(dec,"El modelo inicial tiene poder predictivo","El modelo inicial no supera la prueba F")};
+ IF NOT dec THEN
+  R2Ver("MEJOR MODELO: RESULTADO",CONCAT(txt,{"No se incorporan mas variables."}));
+  RETURN;
+ END;
+ seguir:=1; step:=1;
+ WHILE SIZE(rest)>0 AND seguir==1 DO
+  best:=0; bestR:=-1;
+  FOR j FROM 1 TO SIZE(rest) DO
+   r:=R3Parcial(1,rest(j)+1,CONCAT({0},sel+1));
+   // El indice 0 no se usa: construir controles con indices de matriz (Xj = j+1).
+   ctrl:=sel+1;
+   r:=R3Parcial(1,rest(j)+1,ctrl);
+   IF ABS(r)<=1.000001 AND ABS(r)>bestR THEN bestR:=ABS(r); best:=j; bestR:=ABS(r); END;
+  END;
+  IF best==0 THEN seguir:=0; ELSE
+   i:=rest(best); res1:=R3ModeloCalc(CONCAT(sel,{i}));
+   IF SIZE(res1)<3 THEN
+    txt:=CONCAT(txt,{"No se pudo estimar el modelo con X"+STRING(i)+": singular."});
+    seguir:=0;
+   ELSE
+    q:=SIZE(sel); df:=R3N-(q+2);
+    IF df<=0 OR res1(2)<=0 THEN seguir:=0; ELSE
+     res0:=R3ModeloCalc(sel);
+     fv:=(res1(1)-res0(1))/(res1(2)/df);
+     fc:=FISHER_ICDF(1,df,1-RmAlpha); pv:=1-FISHER_CDF(1,df,fv); dec:=fv>fc;
+     txt:=CONCAT(txt,{"Paso "+STRING(step)+": evaluar X"+STRING(i),
+      "r parcial con controles "+STRING(sel)+" = "+R2Fmt(R3Parcial(1,i+1,sel+1),6),
+      "F parcial = "+R2Fmt(fv,6)+"   F critico = "+R2Fmt(fc,6),
+      "p-valor = "+R2Fmt(pv,7),
+      IFTE(dec,"Se incorpora X"+STRING(i),"No se incorpora X"+STRING(i)+": detener")});
+     IF dec THEN
+      sel:=CONCAT(sel,{i});
+      rest:=REMOVE(rest,best);
+      step:=step+1;
+     ELSE
+      seguir:=0;
+     END;
+    END;
+   END;
+  END;
+ END;
+ R3Modelo:=sel;
+ res1:=R3ModeloCalc(sel);
+ IF SIZE(res1)>=3 THEN
+  txt:=CONCAT(txt,{"MODELO FINAL: "+STRING(sel),
+   "SSR = "+R2Fmt(res1(1),6),
+   "SSE = "+R2Fmt(res1(2),6),
+   "SST = "+R2Fmt(res1(3),6),
+   "R² = "+R2Fmt(res1(1)/res1(3),6),
+   "R = "+R2Fmt(SQRT(res1(1)/res1(3)),6)});
+ END;
+ R2Ver("MEJOR MODELO DE PRIMER ORDEN",txt);
+END;
+
+// Acceso a los 15 apartados del menu principal.
+EXPORT R3Abrir(s)
+BEGIN
+ IF s==1 THEN R3Importa(); END;
+ IF s==2 THEN R3PruebaT(0); END;
+ IF s==3 THEN R3PruebaZ(0); END;
+ IF s==4 THEN R3IC(0); END;
+ IF s==5 THEN R3Simple(); END;
+ IF s==6 THEN R3Multiple(); END;
+ IF s==7 THEN R3Multiple(); END;
+ IF s==8 THEN R3PruebaT(1); END;
+ IF s==9 THEN R3PruebaZ(1); END;
+ IF s==10 THEN R3IC(1); END;
+ IF s==11 THEN R3ParcialUno(); END;
+ IF s==12 THEN R3ParcialMatriz(); END;
+ IF s==13 THEN R3PruebaParcial(); END;
+ IF s==14 THEN R3ParcialUno(); END;
+ IF s==15 THEN R3Mejor(); END;
+END;
