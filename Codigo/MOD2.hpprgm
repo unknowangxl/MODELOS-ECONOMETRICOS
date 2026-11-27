@@ -313,6 +313,48 @@ BEGIN
  R2Aviso("Dimensiones actualizadas. Se reiniciaron los datos.");
 END;
 
+R2VerM(tit,M,nr,nc)
+BEGIN
+ LOCAL top,ini,fin,k,i,j,y,x;
+ LOCAL cw,cs,done;
+ top:=1; ini:=1; done:=0;
+ REPEAT
+  RECT_P(G1,0,0,319,239,RGB(8,16,40),RGB(8,16,40));
+  R2Cab(tit,RGB(255,215,0),3);
+  TEXTOUT_P("Dimension: "+STRING(nr)+" x "+STRING(nc),G1,7,30,2,RGB(0,230,255));
+  cw:=92; cs:=MIN(3,nc-ini+1);
+  TEXTOUT_P("Columnas "+STRING(ini)+"-"+STRING(ini+cs-1)+" de "+STRING(nc),G1,7,44,2,RGB(255,215,0));
+  FOR j FROM 1 TO cs DO
+   x:=34+(j-1)*94;
+   TEXTOUT_P("C"+STRING(ini+j-1),G1,x+4,61,2,RGB(0,230,255));
+  END;
+  FOR i FROM 1 TO 6 DO
+   IF top+i-1<=nr THEN
+    y:=78+(i-1)*22;
+    TEXTOUT_P("R"+STRING(top+i-1),G1,3,y+4,1,RGB(255,215,0));
+    TEXTOUT_P("[",G1,23,y+1,3,RGB(255,255,255));
+    FOR j FROM 1 TO cs DO
+     x:=34+(j-1)*94;
+     TEXTOUT_P(R2Fmt(M(top+i-1,ini+j-1),3),G1,x,y+4,2,RGB(255,255,255));
+    END;
+    TEXTOUT_P("]",G1,34+cs*94-9,y+1,3,RGB(255,255,255));
+   END;
+  END;
+  R2PieNav("FILAS -","SALIR","MAS");
+  BLIT_P(G0,G1); k:=R2Espera();
+  IF k==2 THEN top:=MAX(1,top-1); END;
+  IF k==12 THEN top:=MIN(MAX(1,nr-5),top+1); END;
+  IF k==4 OR k==30 THEN done:=1; END;
+  IF k==1000 AND TapY>=219 THEN
+   IF TapX<107 THEN top:=MAX(1,top-5); END;
+   IF TapX>=107 AND TapX<214 THEN done:=1; END;
+   IF TapX>=214 THEN
+    IF ini+3<=nc THEN ini:=ini+3; ELSE ini:=1; END;
+   END;
+  END;
+ UNTIL done==1;
+END;
+
 R2Datos()
 BEGIN
  LOCAL op,fin;
@@ -368,48 +410,6 @@ BEGIN
  IF R2DF<=0 THEN RETURN 0; END;
  R2S:=SQRT(R2SSE/R2DF);
  RETURN 1;
-END;
-
-R2VerM(tit,M,nr,nc)
-BEGIN
- LOCAL top,ini,fin,k,i,j,y,x;
- LOCAL cw,cs,done;
- top:=1; ini:=1; done:=0;
- REPEAT
-  RECT_P(G1,0,0,319,239,RGB(8,16,40),RGB(8,16,40));
-  R2Cab(tit,RGB(255,215,0),3);
-  TEXTOUT_P("Dimension: "+STRING(nr)+" x "+STRING(nc),G1,7,30,2,RGB(0,230,255));
-  cw:=92; cs:=MIN(3,nc-ini+1);
-  TEXTOUT_P("Columnas "+STRING(ini)+"-"+STRING(ini+cs-1)+" de "+STRING(nc),G1,7,44,2,RGB(255,215,0));
-  FOR j FROM 1 TO cs DO
-   x:=34+(j-1)*94;
-   TEXTOUT_P("C"+STRING(ini+j-1),G1,x+4,61,2,RGB(0,230,255));
-  END;
-  FOR i FROM 1 TO 6 DO
-   IF top+i-1<=nr THEN
-    y:=78+(i-1)*22;
-    TEXTOUT_P("R"+STRING(top+i-1),G1,3,y+4,1,RGB(255,215,0));
-    TEXTOUT_P("[",G1,23,y+1,3,RGB(255,255,255));
-    FOR j FROM 1 TO cs DO
-     x:=34+(j-1)*94;
-     TEXTOUT_P(R2Fmt(M(top+i-1,ini+j-1),3),G1,x,y+4,2,RGB(255,255,255));
-    END;
-    TEXTOUT_P("]",G1,34+cs*94-9,y+1,3,RGB(255,255,255));
-   END;
-  END;
-  R2PieNav("FILAS -","SALIR","MAS");
-  BLIT_P(G0,G1); k:=R2Espera();
-  IF k==2 THEN top:=MAX(1,top-1); END;
-  IF k==12 THEN top:=MIN(MAX(1,nr-5),top+1); END;
-  IF k==4 OR k==30 THEN done:=1; END;
-  IF k==1000 AND TapY>=219 THEN
-   IF TapX<107 THEN top:=MAX(1,top-5); END;
-   IF TapX>=107 AND TapX<214 THEN done:=1; END;
-   IF TapX>=214 THEN
-    IF ini+3<=nc THEN ini:=ini+3; ELSE ini:=1; END;
-   END;
-  END;
- UNTIL done==1;
 END;
 
 R2Metodo()
