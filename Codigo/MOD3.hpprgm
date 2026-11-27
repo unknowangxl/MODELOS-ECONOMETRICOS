@@ -71,7 +71,7 @@ BEGIN
  k:=op;
  op:=R2Elige("NUMERO DE OBSERVACIONES",{"5","8","10","12","15","20","25","30"});
  IF op==0 THEN RETURN; END;
- n:={5,8,10,12,15,20,25,30}(op);
+ n:=5; IF op==2 THEN n:=8; END; IF op==3 THEN n:=10; END; IF op==4 THEN n:=12; END; IF op==5 THEN n:=15; END; IF op==6 THEN n:=20; END; IF op==7 THEN n:=25; END; IF op==8 THEN n:=30; END;
  IF n<=k+2 THEN R2Aviso("Se requieren mas observaciones que parametros."); RETURN; END;
  R3N:=n; R3K:=k;
  R3X:=MAKEMAT(0,30,5); R3Y:=MAKEMAT(0,30,1);
@@ -94,8 +94,10 @@ R3Editar()
 BEGIN
  LOCAL i,j,op,v;
  IF R3N<5 THEN R2Aviso("No hay datos locales. Importe o cree una tabla."); RETURN; END;
- i:=R2Elige("SELECCIONE FILA",MAKELIST(STRING(K),K,1,R3N));
- IF i==0 THEN RETURN; END;
+ v:=R2NumEdit("Numero de fila (1 a "+STRING(R3N)+")",1);
+ IF R2Cancel==1 THEN RETURN; END;
+ i:=IP(v);
+ IF i<1 OR i>R3N THEN R2Aviso("Fila fuera de rango."); RETURN; END;
  op:=R2Elige("VARIABLE A EDITAR",{"Y","X1","X2","X3","X4","X5"});
  IF op==0 OR op>R3K+1 THEN RETURN; END;
  IF op==1 THEN v:=R2NumEdit("Y fila "+STRING(i),R3Y(i,1)); ELSE v:=R2NumEdit("X"+STRING(op-1)+" fila "+STRING(i),R3X(i,op-1)); END;
@@ -375,7 +377,7 @@ BEGIN
 END;
 
 // 3.10 coeficiente parcial con variable objetivo y controles elegidos libremente.
-R3ParcialUno()
+R3ParcialUno(conIC)
 BEGIN
  LOCAL op,target,ctrl,i,r;
  IF R3CalculaSimple()==0 THEN R2Aviso("Datos insuficientes o variable constante."); RETURN; END;
@@ -398,7 +400,7 @@ BEGIN
   "Mide la relacion Y-X despues de controlar las variables elegidas.",
   "Valor entre -1 y 1."
  });
- R3Intervalo(r,"3.13 INTERVALO PARA CORRELACION PARCIAL");
+ IF conIC==1 THEN R3Intervalo(r,"3.13 INTERVALO PARA CORRELACION PARCIAL"); END;
 END;
 
 // 3.11 matriz parcial con seleccion libre de variables de control.
@@ -504,9 +506,7 @@ BEGIN
  WHILE SIZE(rest)>0 AND seguir==1 DO
   best:=0; bestR:=-1;
   FOR j FROM 1 TO SIZE(rest) DO
-   r:=R3Parcial(1,rest(j)+1,CONCAT({0},sel+1));
-   // El indice 0 no se usa: construir controles con indices de matriz (Xj = j+1).
-   ctrl:=sel+1;
+   r:=ctrl:=R3Indices(sel);
    r:=R3Parcial(1,rest(j)+1,ctrl);
    IF ABS(r)<=1.000001 AND ABS(r)>bestR THEN bestR:=ABS(r); best:=j; bestR:=ABS(r); END;
   END;
@@ -528,7 +528,7 @@ BEGIN
       IFTE(dec,"Se incorpora X"+STRING(i),"No se incorpora X"+STRING(i)+": detener")});
      IF dec THEN
       sel:=CONCAT(sel,{i});
-      rest:=REMOVE(rest,best);
+      rest:=R3Quita(rest,best);
       step:=step+1;
      ELSE
       seguir:=0;
@@ -553,7 +553,7 @@ END;
 // Acceso a los 15 apartados del menu principal.
 EXPORT R3Abrir(s)
 BEGIN
- IF s==1 THEN R3Importa(); END;
+ IF s==1 THEN R3Datos(); END;
  IF s==2 THEN R3PruebaT(0); END;
  IF s==3 THEN R3PruebaZ(0); END;
  IF s==4 THEN R3IC(0); END;
@@ -563,9 +563,9 @@ BEGIN
  IF s==8 THEN R3PruebaT(1); END;
  IF s==9 THEN R3PruebaZ(1); END;
  IF s==10 THEN R3IC(1); END;
- IF s==11 THEN R3ParcialUno(); END;
+ IF s==11 THEN R3ParcialUno(0); END;
  IF s==12 THEN R3ParcialMatriz(); END;
  IF s==13 THEN R3PruebaParcial(); END;
- IF s==14 THEN R3ParcialUno(); END;
+ IF s==14 THEN R3ParcialUno(1); END;
  IF s==15 THEN R3Mejor(); END;
 END;
