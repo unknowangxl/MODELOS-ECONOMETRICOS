@@ -34,6 +34,7 @@ Programa para la calculadora **HP Prime (G2)** que resuelve, paso a paso y con e
 - **Gráficas** de dispersión, curva ajustada y residuos, con escalado automático a toda la pantalla.
 - **Modelos no lineales** (exponencial y potencial) en los módulos 1, 2 y 3, a elección del usuario. El modelo estimado queda activo y todos los submódulos del módulo trabajan con él.
 - **Ingreso de datos tipo hoja de cálculo:** tabla editable a pantalla completa, pensada para llenarse tan fácil como una tabla de Excel.
+- **Nivel de significancia configurable:** el valor global de α se puede cambiar desde el menú principal o desde Datos y modelo; las pruebas e intervalos del módulo usan el valor guardado.
 - **Táctil y teclado:** se maneja con flechas, `ENTER` y `ESC`, y también tocando la pantalla.
 - **Colores resaltantes y consistentes** (ver [paleta](#paleta-de-colores)).
 
