@@ -1,4 +1,9 @@
-﻿EXPORT R2N:=10;
+// MODULO 2 - REGRESION LINEAL MULTIPLE
+// DEPENDENCIA: MOD1.hpprgm (exporta RmAlpha y RmConfigAlpha).
+// ORDEN DE COMPILACION: MOD1 -> MOD2 -> MENUPRIN.
+// En HP Prime, compile primero los programas que exportan funciones/variables usadas aqui.
+
+EXPORT R2N:=10;
 EXPORT R2K:=2;
 EXPORT R2X:=MAKEMAT(0,10,2);
 EXPORT R2Y:=MAKEMAT(0,10,1);
