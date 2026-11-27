@@ -421,6 +421,8 @@ BEGIN
   RETURN;
  END;
  R2VerM("MATRIZ DE DISENO X (n x k+1)",R2D,R2N,R2K+1);
+ R2VerM("MATRIZ TRANSPUESTA X'",TRN(R2D),R2K+1,R2N);
+ R2VerM("VECTOR Y (variable dependiente)",R2Y,R2N,1);
  R2VerM("MATRIZ A = X' * X",R2A,R2K+1,R2K+1);
  R2VerM("VECTOR g = X' * Y",R2G,R2K+1,1);
  R2VerM("INVERSA A^-1",R2AI,R2K+1,R2K+1);
@@ -498,6 +500,39 @@ BEGIN
  END;
 END;
 
+R2TablaANOVA()
+BEGIN
+ LOCAL x,y,i,j;
+ LOCAL xs,xe,vals,cols;
+ xs:={0,72,151,190,255};
+ xe:={71,150,189,254,319};
+ cols:={"FUENTE","SC","gl","CM","Fcalc"};
+ vals:={
+  {"Regresion",R2Fmt(R2SSR,2),STRING(R2K),R2Fmt(R2SSR/R2K,2),R2Fmt((R2SSR/R2K)/(R2SSE/R2DF),3)},
+  {"Error",R2Fmt(R2SSE,2),STRING(R2DF),R2Fmt(R2SSE/R2DF,2),""},
+  {"Total",R2Fmt(R2SST,2),STRING(R2N-1),"",""}
+ };
+ RECT_P(G1,0,0,319,239,RGB(8,16,40),RGB(8,16,40));
+ R2Cab("TABLA DE ANALISIS DE VARIANZA",RGB(255,215,0),3);
+ TEXTOUT_P("ANOVA - Modelo de regresion multiple",G1,6,32,2,RGB(0,230,255));
+ FOR j FROM 1 TO 5 DO
+  RECT_P(G1,xs(j),52,xe(j),79,RGB(255,255,255),RGB(0,100,65));
+  TEXTOUT_P(cols(j),G1,xs(j)+2,61,2,RGB(255,255,255));
+ END;
+ FOR i FROM 1 TO 3 DO
+  y:=81+(i-1)*35;
+  FOR j FROM 1 TO 5 DO
+   RECT_P(G1,xs(j),y,xe(j),y+33,RGB(70,80,120),RGB(16,28,64));
+   TEXTOUT_P(vals(i,j),G1,xs(j)+2,y+11,1,RGB(255,255,255));
+  END;
+ END;
+ TEXTOUT_P("Fcalc = CM regresion / CM error",G1,7,193,2,RGB(255,215,0));
+ TEXTOUT_P("gl: regresion k; error n-k-1; total n-1",G1,7,207,2,RGB(220,230,255));
+ R2Pie("ENTER / ESC: volver");
+ BLIT_P(G0,G1);
+ x:=R2Espera();
+END;
+
 EXPORT R2ANOVA()
 BEGIN
  LOCAL ok,df,k,n,msr,mse,fv,fc;
@@ -522,7 +557,8 @@ BEGIN
   "p-valor = "+R2Fmt(pv,7),
   "Rechazar H0 si Fcalc > Fcrit"
  });
- R2Ver("TABLA ANOVA",{
+ R2TablaANOVA();
+ R2Ver("RESUMEN ANOVA Y FORMULAS",{
   "Fuente       SC             gl",
   "Regresion    "+R2Fmt(R2SSR,5)+"      "+STRING(k),
   "Error        "+R2Fmt(R2SSE,5)+"      "+STRING(df),
