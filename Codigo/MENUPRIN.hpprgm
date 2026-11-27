@@ -1,4 +1,4 @@
-﻿MP_EsperaTecla()
+﻿MPEsperaTecla()
 BEGIN
   LOCAL k,m,p,tocando,x,y,j,c;
 
@@ -33,13 +33,13 @@ BEGIN
   UNTIL 0;
 END;
 
-MP_Cabecera(t,c,f)
+MPCabecera(t,c,f)
 BEGIN
   RECT_P(G1,0,0,319,27,c,c);
   TEXTOUT_P(t,G1,8,5,f,RGB(0,0,0));
 END;
 
-MP_Pie(t)
+MPPie(t)
 BEGIN
   RECT_P(G1,0,219,319,239,RGB(30,40,80),RGB(30,40,80));
   TEXTOUT_P(t,G1,6,223,3,RGB(200,220,255));
@@ -60,7 +60,7 @@ BEGIN
   LOCAL i,y;
 
   RECT_P(G1,0,0,319,239,RGB(8,16,40),RGB(8,16,40));
-  MP_Cabecera("MODELOS ECONOMETRICOS SIS-3540",RGB(255,215,0),3);
+  MPCabecera("MODELOS ECONOMETRICOS SIS-3540",RGB(255,215,0),3);
   RECT_P(G1,250,2,316,25,RGB(255,255,255),RGB(35,55,100));
   TEXTOUT_P("ALFA "+STRING(ROUND(100*RmAlpha,1))+"%",G1,254,8,2,RGB(255,255,255));
   FOR i FROM 1 TO 4 DO
@@ -75,7 +75,7 @@ BEGIN
     TEXTOUT_P("MODULO "+STRING(i),G1,52,y+3,6,cols(i));
     TEXTOUT_P(mods(i),G1,52,y+19,3,RGB(255,255,255));
   END;
-  MP_Pie("Toca un modulo o usa flechas + ENTER");
+  MPPie("Toca un modulo o usa flechas + ENTER");
   BLIT_P(G0,G1);
 END;
 
@@ -85,7 +85,7 @@ BEGIN
 
   n:=SIZE(items);
   RECT_P(G1,0,0,319,239,RGB(8,16,40),RGB(8,16,40));
-  MP_Cabecera("MODULO "+STRING(mi)+": "+tit,col,5);
+  MPCabecera("MODULO "+STRING(mi)+": "+tit,col,5);
   FOR i FROM 1 TO 8 DO
     idx:=top+i-1;
     IF idx<=n THEN
@@ -108,13 +108,13 @@ BEGIN
   LOCAL k;
 
   RECT_P(G1,0,0,319,239,RGB(8,16,40),RGB(8,16,40));
-  MP_Cabecera("SUBMODULO",col,4);
+  MPCabecera("SUBMODULO",col,4);
   TEXTOUT_P(tit,G1,10,50,3,RGB(255,255,255));
   RECT_P(G1,10,100,309,170,col,RGB(16,28,64));
   TEXTOUT_P("EN CONSTRUCCION",G1,62,125,3,RGB(255,215,0));
-  MP_Pie("Toca la pantalla o pulsa una tecla: volver");
+  MPPie("Toca la pantalla o pulsa una tecla: volver");
   BLIT_P(G0,G1);
-  k:=MP_EsperaTecla();
+  k:=MPEsperaTecla();
 END;
 
 Abre(mi,s,tit,col)
@@ -155,7 +155,7 @@ BEGIN
   s:=1; top:=1; fin:=0;
   REPEAT
     DibujaSub(mi,tit,items,s,top,col);
-    k:=MP_EsperaTecla();
+    k:=MPEsperaTecla();
     IF k==2 THEN s:=s-1; IF s<1 THEN s:=n; END; END;
     IF k==12 THEN s:=s+1; IF s>n THEN s:=1; END; END;
     IF k==30 THEN Abre(mi,s,items(s),col); END;
@@ -202,7 +202,7 @@ BEGIN
   RECT();
   REPEAT
     DibujaPrincipal(m,mods,cols);
-    k:=MP_EsperaTecla();
+    k:=MPEsperaTecla();
     IF k==2 THEN m:=m-1; IF m<1 THEN m:=4; END; END;
     IF k==12 THEN m:=m+1; IF m>4 THEN m:=1; END; END;
     IF k==30 THEN Submenu(m,mods(m),subs(m),cols(m)); END;
