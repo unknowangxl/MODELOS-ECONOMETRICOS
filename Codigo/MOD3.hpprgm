@@ -12,6 +12,7 @@ EXPORT R3Y:=MAKEMAT(0,30,1);
 EXPORT R3R:=MAKEMAT(0,6,6);
 EXPORT R3RValido:=0;
 EXPORT R3Modelo:={};
+EXPORT R3ModeloBase:={};
 EXPORT R3UltimoR:=0;
 EXPORT R3UltimoR2:=0;
 EXPORT R3UltimoK:=0;
@@ -68,12 +69,12 @@ BEGIN
  op:=R2Elige("IMPORTAR DATOS A MOD3",{"SI, reemplazar los datos locales","NO, conservar datos locales"});
  IF op<>1 THEN RETURN; END;
  R3N:=RComN; R3K:=RComK;
- R3X:=MAKEMAT(0,30,5); R3Y:=MAKEMAT(0,30,1);
+ R3X:=MAKEMAT(0,R3N,R3K); R3Y:=MAKEMAT(0,R3N,1);
  FOR i FROM 1 TO R3N DO
   R3Y(i,1):=RComY(i,1);
   FOR j FROM 1 TO R3K DO R3X(i,j):=RComX(i,j); END;
  END;
- R3RValido:=0; R3Modelo:={};
+ R3RValido:=0; R3Modelo:={}; R3ModeloBase:={};
  R2Aviso("Datos originales importados a MOD3 correctamente.");
 END;
 
@@ -102,7 +103,7 @@ BEGIN
  IF op==0 THEN RETURN; END;
  n:=5; IF op==2 THEN n:=8; END; IF op==3 THEN n:=10; END; IF op==4 THEN n:=12; END; IF op==5 THEN n:=15; END; IF op==6 THEN n:=20; END; IF op==7 THEN n:=25; END; IF op==8 THEN n:=30; END;
  IF n<=k+2 THEN R2Aviso("Se requieren mas observaciones que parametros."); RETURN; END;
- tmpX:=MAKEMAT(0,30,5); tmpY:=MAKEMAT(0,30,1);
+ tmpX:=MAKEMAT(0,n,k); tmpY:=MAKEMAT(0,n,1);
  FOR i FROM 1 TO n DO
   FOR j FROM 1 TO k DO
    v:=R2NumEdit("Fila "+STRING(i)+", X"+STRING(j),0);
@@ -114,8 +115,72 @@ BEGIN
   tmpY(i,1):=v;
  END;
  R3N:=n; R3K:=k; R3X:=tmpX; R3Y:=tmpY;
- R3RValido:=0; R3Modelo:={};
+ R3RValido:=0; R3Modelo:={}; R3ModeloBase:={};
  R2Aviso("Tabla local de MOD3 creada.");
+END;
+
+// Tabla de sumatorias de correlacion simple y multiple, segun el Tema 3.
+R3Sumatorias()
+BEGIN
+ LOCAL i,j,sx,sxx,sxy,sy,syy,v;
+ LOCAL ls;
+ IF R3N<5 OR R3K<1 THEN
+  R2Aviso("Primero importe o cree una tabla de datos.");
+  RETURN;
+ END;
+ sy:=0; syy:=0;
+ FOR i FROM 1 TO R3N DO
+  sy:=sy+R3Y(i,1);
+  syy:=syy+R3Y(i,1)^2;
+ END;
+ ls:={"TABLA DE SUMATORIAS DE CORRELACION","n = "+STRING(R3N),
+  "Variable dependiente: Y","SUMA Y = "+R2Fmt(sy,6),
+  "SUMA Y^2 = "+R2Fmt(syy,6),
+  "Syy = SUMA(Y^2) - (SUMA Y)^2/n = "+R2Fmt(syy-sy^2/R3N,6)};
+ FOR j FROM 1 TO R3K DO
+  sx:=0; sxx:=0; sxy:=0;
+  FOR i FROM 1 TO R3N DO
+   sx:=sx+R3X(i,j);
+   sxx:=sxx+R3X(i,j)^2;
+   sxy:=sxy+R3X(i,j)*R3Y(i,1);
+  END;
+  ls:=CONCAT(ls,{" ","VARIABLE X"+STRING(j),
+   "SUMA X"+STRING(j)+" = "+R2Fmt(sx,6),
+   "SUMA X"+STRING(j)+"^2 = "+R2Fmt(sxx,6),
+   "SUMA X"+STRING(j)+"Y = "+R2Fmt(sxy,6),
+   "Sx"+STRING(j)+"x"+STRING(j)+" = "+R2Fmt(sxx-sx^2/R3N,6),
+   "Syx"+STRING(j)+" = "+R2Fmt(sxy-sx*sy/R3N,6)});
+ END;
+ FOR j FROM 1 TO R3K DO
+  FOR i FROM j+1 TO R3K DO
+   v:=0;
+   FOR sx FROM 1 TO R3N DO v:=v+R3X(sx,j)*R3X(sx,i); END;
+   ls:=CONCAT(ls,{"SUMA X"+STRING(j)+"X"+STRING(i)+" = "+R2Fmt(v,6)});
+  END;
+ END;
+ R2Ver("SUMATORIAS: CORRELACION LINEAL",ls);
+END;
+
+// Guarda la seleccion de variables que se usara como modelo base multiple.
+R3ConfigModelo()
+BEGIN
+ LOCAL sel,i,op;
+ IF R3N<5 OR R3K<1 THEN
+  R2Aviso("Primero importe o cree una tabla de datos.");
+  RETURN;
+ END;
+ sel:={};
+ FOR i FROM 1 TO R3K DO
+  op:=R2Elige("INCLUIR X"+STRING(i)+" EN EL MODELO?",{"SI, incluir","NO, excluir"});
+  IF op==0 THEN RETURN; END;
+  IF op==1 THEN sel:=CONCAT(sel,{i}); END;
+ END;
+ IF SIZE(sel)==0 THEN
+  R2Aviso("Debe seleccionar al menos una variable X.");
+  RETURN;
+ END;
+ R3ModeloBase:=sel;
+ R2Aviso("Modelo base guardado: "+STRING(sel));
 END;
 
 // Administracion de la tabla local y transferencia con MOD2.
@@ -123,7 +188,7 @@ R3Datos()
 BEGIN
  LOCAL op,mat,i,j;
  REPEAT
-  op:=R2Elige("DATOS DE MOD3",{"Importar desde MOD2","Crear tabla nueva","Editar una observacion","Ver datos originales","Exportar a MOD2","Volver"});
+  op:=R2Elige("DATOS Y MODELO DE MOD3",{"Importar desde MOD2","Crear tabla nueva","Editar una observacion","Ver datos originales","Ver tabla de sumatorias","Elegir variables del modelo","Exportar a MOD2","Volver"});
   IF op==1 THEN R3Importa(); END;
   IF op==2 THEN R3Nuevo(); END;
   IF op==3 THEN R3Editar(); END;
@@ -139,8 +204,10 @@ BEGIN
     R2VerM("DATOS ORIGINALES: Y, X1, X2...",mat,R3N,R3K+1);
    END;
   END;
-  IF op==5 THEN R3Exporta(); END;
- UNTIL op==0 OR op==6;
+  IF op==5 THEN R3Sumatorias(); END;
+  IF op==6 THEN R3ConfigModelo(); END;
+  IF op==7 THEN R3Exporta(); END;
+ UNTIL op==0 OR op==8;
 END;
 
 // Editor simple de una celda; conserva todas las filas y columnas.
@@ -204,17 +271,20 @@ R3ModeloCalc(r3p1)
 BEGIN
  LOCAL q,i,j,xx,aa,gg,bb;
  LOCAL det,yh,ym,sse,sst,ssr,e,ans;
+ LOCAL yv;
  q:=SIZE(r3p1);
  IF q<1 OR R3N<=q+1 THEN RETURN {}; END;
  xx:=MAKEMAT(0,R3N,q+1);
+ yv:=MAKEMAT(0,R3N,1);
  FOR i FROM 1 TO R3N DO
+  yv(i,1):=R3Y(i,1);
   xx(i,1):=1;
   FOR j FROM 1 TO q DO xx(i,j+1):=R3X(i,r3p1(j)); END;
  END;
  aa:=TRN(xx)*xx;
  det:=DET(aa);
  IF ABS(det)<0.0000000001 THEN RETURN {}; END;
- gg:=TRN(xx)*R3Y;
+ gg:=TRN(xx)*yv;
  bb:=aa^(-1)*gg;
  ym:=0;
  FOR i FROM 1 TO R3N DO ym:=ym+R3Y(i,1); END;
@@ -279,6 +349,11 @@ END;
 R3Seleccion()
 BEGIN
  LOCAL sel,i,op;
+ IF SIZE(R3ModeloBase)>0 THEN
+  op:=R2Elige("VARIABLES PARA EL MODELO",{"Usar seleccion guardada "+STRING(R3ModeloBase),"Elegir nuevamente"});
+  IF op==0 THEN RETURN {}; END;
+  IF op==1 THEN RETURN R3ModeloBase; END;
+ END;
  sel:={};
  FOR i FROM 1 TO R3K DO
   op:=R2Elige("INCLUIR X"+STRING(i)+"?",{"SI, incluir","NO, excluir"});
