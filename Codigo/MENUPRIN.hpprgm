@@ -131,13 +131,7 @@ BEGIN
     DIMGROB_P(G1,320,240,RGB(8,16,40));
   ELSE
     IF mi==2 THEN
-      IF s==1 THEN R2Datos(); END;
-      IF s==2 THEN R2Metodo(); END;
-      IF s==3 THEN R2IC(); END;
-      IF s==4 THEN R2Prueba(); END;
-      IF s==5 THEN R2ANOVA(); END;
-      IF s==6 THEN R2Predice(); END;
-      IF s==7 THEN R2Adicion(); END;
+      R2Abrir(s);
     ELSE
       Pendiente(mi,tit,col);
     END;
