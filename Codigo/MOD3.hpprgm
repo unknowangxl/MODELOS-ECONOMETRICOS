@@ -18,39 +18,39 @@ EXPORT R3UltimoK:=0;
 EXPORT R3Cancel:=0;
 
 // Devuelve el nombre de una variable: 1=Y, 2=X1, etc.
-R3NomVar(idx)
+R3NomVar(r3p1)
 BEGIN
- IF idx==1 THEN RETURN "Y"; END;
- RETURN "X"+STRING(idx-1);
+ IF r3p1==1 THEN RETURN "Y"; END;
+ RETURN "X"+STRING(r3p1-1);
 END;
 
 // Convierte indices X (1..K) a indices de la matriz (Y=1, X1=2, ...).
-R3Indices(sel)
+R3Indices(r3p1)
 BEGIN
  LOCAL ids,i;
  ids:={};
- FOR i FROM 1 TO SIZE(sel) DO ids:=CONCAT(ids,{sel(i)+1}); END;
+ FOR i FROM 1 TO SIZE(r3p1) DO ids:=CONCAT(ids,{r3p1(i)+1}); END;
  RETURN ids;
 END;
 
 // Elimina de una lista el elemento ubicado en la posicion pos.
-R3Quita(lista,pos)
+R3Quita(r3p1,r3p2)
 BEGIN
  LOCAL out,i;
  out:={};
- FOR i FROM 1 TO SIZE(lista) DO
-  IF i<>pos THEN out:=CONCAT(out,{lista(i)}); END;
+ FOR i FROM 1 TO SIZE(r3p1) DO
+  IF i<>r3p2 THEN out:=CONCAT(out,{r3p1(i)}); END;
  END;
  RETURN out;
 END;
 
 // Permite elegir una X concreta y devuelve su indice (0 = cancelar).
-R3EligeUnaX(tit)
+R3EligeUnaX(r3p1)
 BEGIN
  LOCAL items,i;
  items:={};
  FOR i FROM 1 TO R3K DO items:=CONCAT(items,{"X"+STRING(i)}); END;
- RETURN R2Elige(tit,items);
+ RETURN R2Elige(r3p1,items);
 END;
 
 // Copia los datos originales del espacio compartido a la tabla local.
@@ -192,24 +192,24 @@ BEGIN
 END;
 
 // Muestra una matriz real en pantalla usando el visor matricial de MOD2.
-R3VerMatriz(tit,m,n)
+R3VerMatriz(r3p1,r3p2,r3p3)
 BEGIN
- R2Ver(tit,{"Matriz de correlacion","Filas y columnas: Y, X1, X2, ..."});
- R2VerM(tit,m,n,n);
+ R2Ver(r3p1,{"Matriz de correlacion","Filas y columnas: Y, X1, X2, ..."});
+ R2VerM(r3p1,r3p2,r3p3,r3p3);
 END;
 
 // Calcula SSR, SSE y SST de una regresion lineal con el subconjunto sel.
 // sel contiene indices X originales (1..R3K).
-R3ModeloCalc(sel)
+R3ModeloCalc(r3p1)
 BEGIN
  LOCAL q,i,j,xx,aa,gg,bb;
  LOCAL det,yh,ym,sse,sst,ssr,e,ans;
- q:=SIZE(sel);
+ q:=SIZE(r3p1);
  IF q<1 OR R3N<=q+1 THEN RETURN {}; END;
  xx:=MAKEMAT(0,R3N,q+1);
  FOR i FROM 1 TO R3N DO
   xx(i,1):=1;
-  FOR j FROM 1 TO q DO xx(i,j+1):=R3X(i,sel(j)); END;
+  FOR j FROM 1 TO q DO xx(i,j+1):=R3X(i,r3p1(j)); END;
  END;
  aa:=TRN(xx)*xx;
  det:=DET(aa);
@@ -233,10 +233,10 @@ END;
 
 // Correlacion parcial entre las variables i,j controlando las variables ctrl.
 // Se obtiene mediante la inversa de la matriz de correlacion del subconjunto.
-R3Parcial(idx1,j,ctrl)
+R3Parcial(r3p1,r3p2,r3p3)
 BEGIN
  LOCAL ids,m,q,a,b,p,det,r;
- ids:=CONCAT({idx1,j},ctrl);
+ ids:=CONCAT({r3p1,r3p2},r3p3);
  q:=SIZE(ids);
  IF R3RValido==0 THEN IF R3CalculaSimple()==0 THEN RETURN 999; END; END;
  m:=MAKEMAT(0,q,q);
@@ -252,12 +252,12 @@ BEGIN
 END;
 
 // Matriz de correlacion parcial para todas las variables no controladas.
-R3MatrizParcial(ctrl)
+R3MatrizParcial(r3p1)
 BEGIN
  LOCAL ids,q,i,j,a,b,r,m;
  ids:={};
  FOR i FROM 1 TO R3K+1 DO
-  IF NOT(POS(ctrl,i)>0) THEN ids:=CONCAT(ids,{i}); END;
+  IF NOT(POS(r3p1,i)>0) THEN ids:=CONCAT(ids,{i}); END;
  END;
  q:=SIZE(ids);
  IF q<2 THEN RETURN {}; END;
@@ -266,7 +266,7 @@ BEGIN
   FOR j FROM 1 TO q DO
    IF i==j THEN m(i,j):=1;
    ELSE
-    r:=R3Parcial(ids(i),ids(j),ctrl);
+    r:=R3Parcial(ids(i),ids(j),r3p1);
     IF ABS(r)>1.000001 THEN RETURN {}; END;
     m(i,j):=r;
    END;
@@ -312,12 +312,12 @@ BEGIN
 END;
 
 // Prueba T para correlacion simple o multiple.
-R3PruebaT(multiple)
+R3PruebaT(r3p1)
 BEGIN
  LOCAL sel,res,k,r,tv,tc,df,dec;
  LOCAL op;
  op:=0;
- IF multiple==0 THEN
+ IF r3p1==0 THEN
   IF R3CalculaSimple()==0 THEN R2Aviso("Datos insuficientes o variable constante."); RETURN; END;
   op:=R3EligeUnaX("VARIABLE X");
   IF op==0 THEN RETURN; END;
@@ -334,7 +334,7 @@ BEGIN
  tv:=r*SQRT(df)/SQRT(1-r^2);
  tc:=STUDENT_ICDF(df,1-RmAlpha/2); dec:=ABS(tv)>tc;
  R2Ver("INFERENCIA ESTADISTICA: PRUEBA T",{
-  IFTE(multiple==0,"Correlacion simple Y con X"+STRING(op),"Correlacion multiple con "+STRING(sel)),
+  IFTE(r3p1==0,"Correlacion simple Y con X"+STRING(op),"Correlacion r3p1 con "+STRING(sel)),
   "H0: rho = 0",
   "H1: rho <> 0",
   "Alfa = "+R2Fmt(RmAlpha,4),
@@ -348,12 +348,12 @@ BEGIN
  });
 END;
 
-// Prueba Z de Fisher para un valor especifico de rho (simple o multiple).
-R3PruebaZ(multiple)
+// Prueba Z de Fisher para un valor especifico de rho (simple o r3p1).
+R3PruebaZ(r3p1)
 BEGIN
  LOCAL sel,res,k,r,rho,zv,zc,dec;
  LOCAL op;
- IF multiple==0 THEN
+ IF r3p1==0 THEN
   IF R3CalculaSimple()==0 THEN R2Aviso("Datos insuficientes."); RETURN; END;
   op:=R3EligeUnaX("VARIABLE X");
   IF op==0 THEN RETURN; END;
@@ -381,22 +381,22 @@ BEGIN
  });
 END;
 
-// Intervalo de confianza de Fisher para correlacion simple/multiple/parcial.
-R3Intervalo(r,tit)
+// Intervalo de confianza de Fisher para correlacion simple/r3p1/parcial.
+R3Intervalo(r3p1,r3p2)
 BEGIN
  LOCAL zc,a,b,li,ls;
- IF ABS(r)>=1 THEN R2Aviso("No se puede construir el intervalo si |r|=1."); RETURN; END;
+ IF ABS(r3p1)>=1 THEN R2Aviso("No se puede construir el intervalo si |r3p1|=1."); RETURN; END;
  IF R3N<=3 THEN R2Aviso("Se requieren mas de 3 observaciones."); RETURN; END;
  zc:=NORMALD_ICDF(0,1,1-RmAlpha/2);
- a:=0.5*LN((1+r)/(1-r))-zc/SQRT(R3N-3);
- b:=0.5*LN((1+r)/(1-r))+zc/SQRT(R3N-3);
+ a:=0.5*LN((1+r3p1)/(1-r3p1))-zc/SQRT(R3N-3);
+ b:=0.5*LN((1+r3p1)/(1-r3p1))+zc/SQRT(R3N-3);
  li:=(EXP(2*a)-1)/(EXP(2*a)+1);
  ls:=(EXP(2*b)-1)/(EXP(2*b)+1);
- R2Ver(tit,{
+ R2Ver(r3p2,{
   "Confianza = "+R2Fmt(100*(1-RmAlpha),2)+"%",
-  "r estimado = "+R2Fmt(r,6),
-  "A = 1/2 ln((1+r)/(1-r)) - z0/raiz(n-3)",
-  "B = 1/2 ln((1+r)/(1-r)) + z0/raiz(n-3)",
+  "r3p1 estimado = "+R2Fmt(r3p1,6),
+  "A = 1/2 ln((1+r3p1)/(1-r3p1)) - z0/raiz(n-3)",
+  "B = 1/2 ln((1+r3p1)/(1-r3p1)) + z0/raiz(n-3)",
   "z0 = "+R2Fmt(zc,6),
   "A = "+R2Fmt(a,6),
   "B = "+R2Fmt(b,6),
@@ -406,10 +406,10 @@ BEGIN
  });
 END;
 
-R3IC(multiple)
+R3IC(r3p1)
 BEGIN
  LOCAL sel,res,r,op;
- IF multiple==0 THEN
+ IF r3p1==0 THEN
   IF R3CalculaSimple()==0 THEN R2Aviso("Datos insuficientes."); RETURN; END;
   op:=R3EligeUnaX("VARIABLE X");
   IF op==0 THEN RETURN; END;
@@ -434,7 +434,7 @@ BEGIN
 END;
 
 // 3.10 coeficiente parcial con variable objetivo y controles elegidos libremente.
-R3ParcialUno(conIC)
+R3ParcialUno(r3p1)
 BEGIN
  LOCAL op,target,ctrl,i,r;
  IF R3CalculaSimple()==0 THEN R2Aviso("Datos insuficientes o variable constante."); RETURN; END;
@@ -458,7 +458,7 @@ BEGIN
   "Mide la relacion Y-X despues de controlar las variables elegidas.",
   "Valor entre -1 y 1."
  });
- IF conIC==1 THEN R3Intervalo(r,"3.13 INTERVALO PARA CORRELACION PARCIAL"); END;
+ IF r3p1==1 THEN R3Intervalo(r,"3.13 INTERVALO PARA CORRELACION PARCIAL"); END;
 END;
 
 // 3.11 matriz parcial con seleccion libre de variables de control.
@@ -611,21 +611,21 @@ BEGIN
 END;
 
 // Acceso a los 15 apartados del menu principal.
-EXPORT R3Abrir(s)
+EXPORT R3Abrir(r3p1)
 BEGIN
- IF s==1 THEN R3Datos(); END;
- IF s==2 THEN R3PruebaT(0); END;
- IF s==3 THEN R3PruebaZ(0); END;
- IF s==4 THEN R3IC(0); END;
- IF s==5 THEN R3Simple(); END;
- IF s==6 THEN R3Multiple(); END;
- IF s==7 THEN R3Multiple(); END;
- IF s==8 THEN R3PruebaT(1); END;
- IF s==9 THEN R3PruebaZ(1); END;
- IF s==10 THEN R3IC(1); END;
- IF s==11 THEN R3ParcialUno(0); END;
- IF s==12 THEN R3ParcialMatriz(); END;
- IF s==13 THEN R3PruebaParcial(); END;
- IF s==14 THEN R3ParcialUno(1); END;
- IF s==15 THEN R3Mejor(); END;
+ IF r3p1==1 THEN R3Datos(); END;
+ IF r3p1==2 THEN R3PruebaT(0); END;
+ IF r3p1==3 THEN R3PruebaZ(0); END;
+ IF r3p1==4 THEN R3IC(0); END;
+ IF r3p1==5 THEN R3Simple(); END;
+ IF r3p1==6 THEN R3Multiple(); END;
+ IF r3p1==7 THEN R3Multiple(); END;
+ IF r3p1==8 THEN R3PruebaT(1); END;
+ IF r3p1==9 THEN R3PruebaZ(1); END;
+ IF r3p1==10 THEN R3IC(1); END;
+ IF r3p1==11 THEN R3ParcialUno(0); END;
+ IF r3p1==12 THEN R3ParcialMatriz(); END;
+ IF r3p1==13 THEN R3PruebaParcial(); END;
+ IF r3p1==14 THEN R3ParcialUno(1); END;
+ IF r3p1==15 THEN R3Mejor(); END;
 END;
