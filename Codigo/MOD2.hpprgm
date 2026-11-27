@@ -516,7 +516,7 @@ BEGIN
  END;
  R2VerM("MATRIZ DE DISENO X (n x k+1)",R2D,R2N,R2K+1);
  R2VerM("MATRIZ TRANSPUESTA X'",TRN(R2D),R2K+1,R2N);
- R2VerM("VECTOR Y (variable dependiente)",R2Y,R2N,1);
+ R2VerM("VECTOR Y* (escala del modelo)",R2U,R2N,1);
  R2VerM("MATRIZ A = X' * X",R2A,R2K+1,R2K+1);
  R2VerM("VECTOR g = X' * Y",R2G,R2K+1,1);
  R2VerM("INVERSA A^-1",R2AI,R2K+1,R2K+1);
@@ -667,7 +667,7 @@ BEGIN
   "Error        "+R2Fmt(mse,5),
   " ",
   "SST = sum(yi - ymedia)^2",
-  "SSR = sum(bj*gj) - (sumY)^2/n",
+  "SSR = sum(bj*gj) - (sumY*)^2/n",
   "SSE = SST - SSR"
  });
  R2Ver("DECISION: PODER PREDICTIVO",{
@@ -711,10 +711,10 @@ BEGIN
   "Confianza = "+R2Fmt(100*(1-RmAlpha),2)+"%",
   "t critico = "+R2Fmt(tc,6),
   "IC media: Yhat +/- t*S*raiz(h)",
-  "Limite inferior media = "+R2Fmt(l1,6),
-  "Limite superior media = "+R2Fmt(u1,6),
+  "Limite inferior media = "+R2Fmt(IFTE(R2T==1,l1,EXP(l1)),6),
+  "Limite superior media = "+R2Fmt(IFTE(R2T==1,u1,EXP(u1)),6),
   "IP individual: Yhat +/- t*S*raiz(1+h)",
-  "Limite inferior prediccion = "+R2Fmt(l2,6),
+  "Limite inferior prediccion = "+R2Fmt(IFTE(R2T==1,l2,EXP(l2)),6),
   "Limite superior prediccion = "+R2Fmt(IFTE(R2T==1,u2,EXP(u2)),6),
   IFTE(R2T==1,"Escala original de Y","Intervalos calculados en ln(Y) y reexpresados con exp()")
  });
