@@ -681,33 +681,7 @@ BEGIN
  });
 END;
 
-EXPORT R2MOD()
-BEGIN
- LOCAL op,fin;
- DIMGROB_P(G1,320,240,RGB(8,16,40));
- fin:=0;
- REPEAT
-  op:=R2Elige("MODULO 2: REGRESION MULTIPLE",{
-   "Datos y modelo (editar observaciones)",
-   "2.1 Metodo matricial",
-   "2.2 Intervalos de confianza beta_i",
-   "2.3 Pruebas de hipotesis beta_i",
-   "2.4 Poder predictivo (ANOVA)",
-   "2.5 Prediccion",
-   "2.6 Adicion de variables (F parcial)",
-   "Volver"
-  });
-  IF op==1 THEN R2Datos(); END;
-  IF op==2 THEN R2Metodo(); END;
-  IF op==3 THEN R2IC(); END;
-  IF op==4 THEN R2Prueba(); END;
-  IF op==5 THEN R2ANOVA(); END;
-  IF op==6 THEN R2Predice(); END;
-  IF op==7 THEN R2Adicion(); END;
-  IF op==8 OR op==0 THEN fin:=1; END;
- UNTIL fin==1;
-END;
-
+// R2Abrir es el unico despachador del menu principal para los apartados 2.1 a 2.6.
 EXPORT R2Abrir(s)
 BEGIN
  IF s==1 THEN R2Datos(); END;
