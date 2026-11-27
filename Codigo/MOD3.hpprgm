@@ -18,10 +18,10 @@ EXPORT R3UltimoK:=0;
 EXPORT R3Cancel:=0;
 
 // Devuelve el nombre de una variable: 1=Y, 2=X1, etc.
-R3NomVar(i)
+R3NomVar(idx)
 BEGIN
- IF i==1 THEN RETURN "Y"; END;
- RETURN "X"+STRING(i-1);
+ IF idx==1 THEN RETURN "Y"; END;
+ RETURN "X"+STRING(idx-1);
 END;
 
 // Convierte indices X (1..K) a indices de la matriz (Y=1, X1=2, ...).
@@ -233,10 +233,10 @@ END;
 
 // Correlacion parcial entre las variables i,j controlando las variables ctrl.
 // Se obtiene mediante la inversa de la matriz de correlacion del subconjunto.
-R3Parcial(i,j,ctrl)
+R3Parcial(idx1,j,ctrl)
 BEGIN
  LOCAL ids,m,q,a,b,p,det,r;
- ids:=CONCAT({i,j},ctrl);
+ ids:=CONCAT({idx1,j},ctrl);
  q:=SIZE(ids);
  IF R3RValido==0 THEN IF R3CalculaSimple()==0 THEN RETURN 999; END; END;
  m:=MAKEMAT(0,q,q);
