@@ -293,6 +293,6 @@ Un módulo se considera terminado solo cuando:
 ## Bibliografía y créditos
 
 - **Formulario:** *Formulario SIS-3540*, Univ. Jhonatan Pally Cotaña.
-- **Bibliografía del Tema 1:** *Análisis de regresión lineal simple*, Rubén Medinaceli O.
+- **Bibliografía de la materia:* Rubén Medinaceli O.
 - **Materia:** Modelos Econométricos, SIS-3540.
-- **Autor del programa:** *(completar con tu nombre)*
+- **Autor del programa:** *Univ. Barrionuevo Delgado ANgel*
