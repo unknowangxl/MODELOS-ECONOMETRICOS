@@ -1,6 +1,6 @@
 // MODULO 2 - REGRESION LINEAL MULTIPLE
 // DEPENDENCIA: MOD1.hpprgm (exporta RmAlpha y RmConfigAlpha).
-// ORDEN DE COMPILACION: MOD1 -> MOD2 -> MENUPRIN.
+// ORDEN DE COMPILACION: MOD1 -> MOD2 -> MOD3 -> MENUPRIN.
 // En HP Prime, compile primero los programas que exportan funciones/variables usadas aqui.
 
 EXPORT R2N:=10;
@@ -456,21 +456,36 @@ BEGIN
 END;
 
 
-// Copia los datos originales de MOD2 al espacio comun para que MOD3 pueda leerlos.
+// API compartida MOD2 <-> MOD3.
+// MOD3 puede llamar esta funcion pasando sus matrices originales X e Y.
+// Contrato: n entre 5 y 30; k entre 1 y 5; X es n x k; Y es n x 1.
+// Solo se copian datos originales: nunca ln(X), ln(Y), coeficientes ni resultados.
+EXPORT R2PublicaDatos(n,k,x,y)
+BEGIN
+ LOCAL i,j;
+ IF n<5 OR n>30 OR k<1 OR k>5 THEN
+  R2Aviso("No se pueden compartir datos: se requiere n=5..30 y k=1..5.");
+  RETURN 0;
+ END;
+ RComX:=MAKEMAT(0,30,5);
+ RComY:=MAKEMAT(0,30,1);
+ FOR i FROM 1 TO n DO
+  RComY(i,1):=y(i,1);
+  FOR j FROM 1 TO k DO
+   RComX(i,j):=x(i,j);
+  END;
+ END;
+ RComN:=n; RComK:=k; RComValido:=1;
+ RETURN 1;
+END;
+
+// Publica la tabla activa de MOD2 en el espacio compartido.
 // No altera el tipo de modelo ni las matrices de calculo de MOD2.
 EXPORT R2ExportaDatos()
 BEGIN
- LOCAL i,j;
- RComX:=MAKEMAT(0,30,5);
- RComY:=MAKEMAT(0,30,1);
- FOR i FROM 1 TO R2N DO
-  RComY(i,1):=R2Y(i,1);
-  FOR j FROM 1 TO R2K DO
-   RComX(i,j):=R2X(i,j);
-  END;
+ IF R2PublicaDatos(R2N,R2K,R2X,R2Y)==1 THEN
+  R2Aviso("Datos originales exportados. MOD3 ya puede importarlos.");
  END;
- RComN:=R2N; RComK:=R2K; RComValido:=1;
- R2Aviso("Datos originales exportados al espacio compartido. MOD3 ya puede importarlos.");
 END;
 
 // Copia al MOD2 los datos originales previamente publicados por MOD3.
@@ -515,8 +530,8 @@ BEGIN
    "4 Elegir tipo de modelo",
    "5 Ver tabla de sumatorias",
    "6 Configurar alfa",
-   "7 Exportar datos para MOD3",
-   "8 Importar datos de MOD3",
+   "7 Exportar datos al espacio comun",
+   "8 Importar datos del espacio comun",
    "9 Volver"
   });
   IF op==1 THEN R2Editor(); END;
