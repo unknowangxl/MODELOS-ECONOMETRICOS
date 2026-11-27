@@ -1,38 +1,3 @@
-﻿MPEsperaTecla()
-BEGIN
-  LOCAL k,m,p,tocando,x,y,j,c;
-
-  LOCAL kk;
-
-  tocando:=0; x:=0; y:=0;
-  kk:={2,12,30,4};
-  REPEAT
-    FOR j FROM 1 TO 4 DO
-      c:=kk(j);
-      IF ISKEYDOWN(c) THEN
-        REPEAT
-          WAIT(0.02);
-        UNTIL NOT ISKEYDOWN(c);
-        RETURN c;
-      END;
-    END;
-    m:=MOUSE;
-    p:={};
-    IF TYPE(m)==6 THEN
-      IF SIZE(m)>0 THEN p:=m(1); END;
-    END;
-    IF TYPE(p)==6 AND SIZE(p)>=2 THEN
-      x:=p(1); y:=p(2);
-      tocando:=1;
-    ELSE
-      IF tocando==1 THEN
-        TapX:=x; TapY:=y;
-        RETURN 1000;
-      END;
-    END;
-  UNTIL 0;
-END;
-
 MPCabecera(t,c,f)
 BEGIN
   RECT_P(G1,0,0,319,27,c,c);
@@ -45,7 +10,7 @@ BEGIN
   TEXTOUT_P(t,G1,6,223,3,RGB(200,220,255));
 END;
 
-PieSub(s,n,col)
+MPPieSub(s,n,col)
 BEGIN
   RECT_P(G1,0,219,105,239,RGB(255,255,255),RGB(30,40,80));
   RECT_P(G1,107,219,212,239,RGB(255,255,255),RGB(120,30,30));
@@ -55,10 +20,9 @@ BEGIN
   TEXTOUT_P("BAJAR",G1,242,222,3,RGB(255,255,255));
 END;
 
-DibujaPrincipal(m,mods,cols)
+MPDibujaPrincipal(m,mods,cols)
 BEGIN
   LOCAL i,y;
-
   RECT_P(G1,0,0,319,239,RGB(8,16,40),RGB(8,16,40));
   MPCabecera("MODELOS ECONOMETRICOS SIS-3540",RGB(255,215,0),3);
   RECT_P(G1,250,2,316,25,RGB(255,255,255),RGB(35,55,100));
@@ -79,10 +43,9 @@ BEGIN
   BLIT_P(G0,G1);
 END;
 
-DibujaSub(mi,tit,items,s,top,col)
+MPDibujaSub(mi,tit,items,s,top,col)
 BEGIN
   LOCAL i,y,n,idx;
-
   n:=SIZE(items);
   RECT_P(G1,0,0,319,239,RGB(8,16,40),RGB(8,16,40));
   MPCabecera("MODULO "+STRING(mi)+": "+tit,col,5);
@@ -99,14 +62,13 @@ BEGIN
       END;
     END;
   END;
-  PieSub(s,n,col);
+  MPPieSub(s,n,col);
   BLIT_P(G0,G1);
 END;
 
-Pendiente(cod,tit,col)
+MPPendiente(cod,tit,col)
 BEGIN
   LOCAL k;
-
   RECT_P(G1,0,0,319,239,RGB(8,16,40),RGB(8,16,40));
   MPCabecera("SUBMODULO",col,4);
   TEXTOUT_P(tit,G1,10,50,3,RGB(255,255,255));
@@ -117,7 +79,7 @@ BEGIN
   k:=MPEsperaTecla();
 END;
 
-Abre(mi,s,tit,col)
+MPAbre(mi,s,tit,col)
 BEGIN
   IF mi==1 THEN
     IF s==1 THEN RmDATOS(); END;
@@ -132,8 +94,6 @@ BEGIN
     RETURN;
   END;
   IF mi==2 THEN
-    // El menu de MENUPRIN es el unico menu del Modulo 2.
-    // R2Abrir ejecuta directamente el submodulo seleccionado.
     R2Abrir(s);
     DIMGROB_P(G1,320,240,RGB(8,16,40));
     RETURN;
@@ -143,29 +103,42 @@ BEGIN
     DIMGROB_P(G1,320,240,RGB(8,16,40));
     RETURN;
   END;
-  Pendiente(mi,tit,col);
+  MPPendiente(mi,tit,col);
 END;
-Submenu(mi,tit,items,col)
+
+MPSubmenu(mi,tit,items,col)
 BEGIN
-  LOCAL s,top,n,k,fin,i,x,y;
-
-  LOCAL idx;
-
+  LOCAL s,top,n,k,fin,i,x,y,idx;
   n:=SIZE(items);
-  s:=1; top:=1; fin:=0;
+  s:=1;
+  top:=1;
+  fin:=0;
   REPEAT
-    DibujaSub(mi,tit,items,s,top,col);
+    MPDibujaSub(mi,tit,items,s,top,col);
     k:=MPEsperaTecla();
-    IF k==2 THEN s:=s-1; IF s<1 THEN s:=n; END; END;
-    IF k==12 THEN s:=s+1; IF s>n THEN s:=1; END; END;
-    IF k==30 THEN Abre(mi,s,items(s),col); END;
+    IF k==2 THEN
+      s:=s-1;
+      IF s<1 THEN s:=n; END;
+    END;
+    IF k==12 THEN
+      s:=s+1;
+      IF s>n THEN s:=1; END;
+    END;
+    IF k==30 THEN MPAbre(mi,s,items(s),col); END;
     IF k==4 THEN fin:=1; END;
     IF k==1000 THEN
-      x:=TapX; y:=TapY;
+      x:=TapX;
+      y:=TapY;
       IF y>=219 THEN
-        IF x<107 THEN s:=s-1; IF s<1 THEN s:=n; END; END;
+        IF x<107 THEN
+          s:=s-1;
+          IF s<1 THEN s:=n; END;
+        END;
         IF x>=107 AND x<214 THEN fin:=1; END;
-        IF x>=214 THEN s:=s+1; IF s>n THEN s:=1; END; END;
+        IF x>=214 THEN
+          s:=s+1;
+          IF s>n THEN s:=1; END;
+        END;
       ELSE
         IF y<28 THEN
           fin:=1;
@@ -174,38 +147,80 @@ BEGIN
           idx:=top+i-1;
           IF i>=1 AND i<=8 AND idx<=n THEN
             s:=idx;
-            DibujaSub(mi,tit,items,s,top,col);
-            Abre(mi,s,items(s),col);
+            MPDibujaSub(mi,tit,items,s,top,col);
+            MPAbre(mi,s,items(s),col);
           END;
         END;
       END;
     END;
     IF s<top THEN top:=s; END;
     IF s>top+7 THEN top:=s-7; END;
-  UNTIL fin=1;
+  UNTIL fin==1;
+END;
+
+MPEsperaTecla()
+BEGIN
+  LOCAL k,m,p,tocando,x,y,j,c,kk;
+  tocando:=0;
+  x:=0;
+  y:=0;
+  kk:={2,12,30,4};
+  REPEAT
+    FOR j FROM 1 TO 4 DO
+      c:=kk(j);
+      IF ISKEYDOWN(c) THEN
+        REPEAT
+          WAIT(0.02);
+        UNTIL NOT ISKEYDOWN(c);
+        RETURN c;
+      END;
+    END;
+    m:=MOUSE;
+    p:={};
+    IF TYPE(m)==6 THEN
+      IF SIZE(m)>0 THEN p:=m(1); END;
+    END;
+    IF TYPE(p)==6 AND SIZE(p)>=2 THEN
+      x:=p(1);
+      y:=p(2);
+      tocando:=1;
+    ELSE
+      IF tocando==1 THEN
+        TapX:=x;
+        TapY:=y;
+        RETURN 1000;
+      END;
+    END;
+  UNTIL 0;
 END;
 
 EXPORT MENUPRIN()
 BEGIN
   LOCAL mods,subs,cols,m,k,fin,i,y;
-
-  mods:={"Regresión lineal simple","Regresión lineal múltiple","Correlación lineal","Heteroced./Autocorr./Multicol."};
+  mods:={"Regresion lineal simple","Regresion lineal multiple","Correlacion lineal","Heteroced./Autocorr./Multicol."};
   cols:={RGB(255,80,80),RGB(70,230,110),RGB(0,200,255),RGB(255,60,210)};
   subs:={
-    {"Datos y modelo (lineal/no lineal)","1.1 IC para β0","1.2 IC para β1","1.3 Predicción","1.4 Utilidad del modelo (T)","1.5 Estadístico F (ANOVA)","1.6 Prueba de linealidad","1.7 Modelos no lineales"},
-    {"Datos y modelo (lineal/no lineal)","2.1 Método matricial","2.2 IC para βi","2.3 Prueba de hipótesis βi","2.4 Poder predictivo (ANOVA)","2.5 Predicción","2.6 Adición de variables (F)"},
-    {"Datos y modelo de correlacion","3.1 Inferencia estadística (T)","3.2 Para un valor exacto (Z)","3.3 IC para ρ y:x","3.4 Matriz correl. lineal simple","3.5 Correlación lineal múltiple","3.6 Determinación lineal múltiple","3.7 Inferencia estadística (T)","3.8 Para un valor específico (Z)","3.9 IC para ρ múltiple","3.10 Correlación parcial simple","3.11 Matriz correl. parcial","3.12 Inferencia parcial (F)","3.13 IC para ρ parcial","Mejor modelo de primer orden"},
-    {"Datos y residuos","4.1 Heteroced.: gráfica Ŷ-e²","4.2 Heteroced.: Goldfeld-Quandt","4.3 Autocorr.: gráfica ei-1 vs ei","4.4 Autocorr.: corridas n<15","4.5 Autocorr.: corridas n>15","4.6 Autocorr.: Durbin-Watson","4.7 Multicolinealidad: correlación"}
+    {"Datos y modelo (lineal/no lineal)","1.1 IC para beta0","1.2 IC para beta1","1.3 Prediccion","1.4 Utilidad del modelo (T)","1.5 Estadistico F (ANOVA)","1.6 Prueba de linealidad","1.7 Modelos no lineales"},
+    {"Datos y modelo (lineal/no lineal)","2.1 Metodo matricial","2.2 IC para betai","2.3 Prueba de hipotesis betai","2.4 Poder predictivo (ANOVA)","2.5 Prediccion","2.6 Adicion de variables (F)"},
+    {"Datos y modelo de correlacion","3.1 Inferencia estadistica (T)","3.2 Para un valor exacto (Z)","3.3 IC para rho y:x","3.4 Matriz correl. lineal simple","3.5 Correlacion lineal multiple","3.6 Determinacion lineal multiple","3.7 Inferencia estadistica (T)","3.8 Para un valor especifico (Z)","3.9 IC para rho multiple","3.10 Correlacion parcial simple","3.11 Matriz correl. parcial","3.12 Inferencia parcial (F)","3.13 IC para rho parcial","Mejor modelo de primer orden"},
+    {"Datos y residuos","4.1 Heteroced.: grafica Yhat-e2","4.2 Heteroced.: Goldfeld-Quandt","4.3 Autocorr.: grafica ei-1 vs ei","4.4 Autocorr.: corridas n<15","4.5 Autocorr.: corridas n>15","4.6 Autocorr.: Durbin-Watson","4.7 Multicolinealidad: correlacion"}
   };
-  m:=1; fin:=0;
+  m:=1;
+  fin:=0;
   DIMGROB_P(G1,320,240,RGB(8,16,40));
   RECT();
   REPEAT
-    DibujaPrincipal(m,mods,cols);
+    MPDibujaPrincipal(m,mods,cols);
     k:=MPEsperaTecla();
-    IF k==2 THEN m:=m-1; IF m<1 THEN m:=4; END; END;
-    IF k==12 THEN m:=m+1; IF m>4 THEN m:=1; END; END;
-    IF k==30 THEN Submenu(m,mods(m),subs(m),cols(m)); END;
+    IF k==2 THEN
+      m:=m-1;
+      IF m<1 THEN m:=4; END;
+    END;
+    IF k==12 THEN
+      m:=m+1;
+      IF m>4 THEN m:=1; END;
+    END;
+    IF k==30 THEN MPSubmenu(m,mods(m),subs(m),cols(m)); END;
     IF k==4 THEN fin:=1; END;
     IF k==1000 THEN
       y:=TapY;
@@ -214,9 +229,9 @@ BEGIN
         i:=IP((y-34)/46)+1;
         IF i>=1 AND i<=4 THEN
           m:=i;
-          Submenu(m,mods(m),subs(m),cols(m));
+          MPSubmenu(m,mods(m),subs(m),cols(m));
         END;
       END;
     END;
-  UNTIL fin=1;
+  UNTIL fin==1;
 END;
