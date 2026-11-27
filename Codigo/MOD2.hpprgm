@@ -507,11 +507,9 @@ BEGIN
  xs:={0,72,151,190,255};
  xe:={71,150,189,254,319};
  cols:={"FUENTE","SC","gl","CM","Fcalc"};
- vals:={
-  {"Regresion",R2Fmt(R2SSR,2),STRING(R2K),R2Fmt(R2SSR/R2K,2),R2Fmt((R2SSR/R2K)/(R2SSE/R2DF),3)},
-  {"Error",R2Fmt(R2SSE,2),STRING(R2DF),R2Fmt(R2SSE/R2DF,2),""},
-  {"Total",R2Fmt(R2SST,2),STRING(R2N-1),"",""}
- };
+ vals:={"Regresion",R2Fmt(R2SSR,2),STRING(R2K),R2Fmt(R2SSR/R2K,2),R2Fmt((R2SSR/R2K)/(R2SSE/R2DF),3),
+        "Error",R2Fmt(R2SSE,2),STRING(R2DF),R2Fmt(R2SSE/R2DF,2),"",
+        "Total",R2Fmt(R2SST,2),STRING(R2N-1),"",""};
  RECT_P(G1,0,0,319,239,RGB(8,16,40),RGB(8,16,40));
  R2Cab("TABLA DE ANALISIS DE VARIANZA",RGB(255,215,0),3);
  TEXTOUT_P("ANOVA - Modelo de regresion multiple",G1,6,32,2,RGB(0,230,255));
@@ -523,7 +521,7 @@ BEGIN
   y:=81+(i-1)*35;
   FOR j FROM 1 TO 5 DO
    RECT_P(G1,xs(j),y,xe(j),y+33,RGB(70,80,120),RGB(16,28,64));
-   TEXTOUT_P(vals(i,j),G1,xs(j)+2,y+11,1,RGB(255,255,255));
+   TEXTOUT_P(vals((i-1)*5+j),G1,xs(j)+2,y+11,1,RGB(255,255,255));
   END;
  END;
  TEXTOUT_P("Fcalc = CM regresion / CM error",G1,7,193,2,RGB(255,215,0));
