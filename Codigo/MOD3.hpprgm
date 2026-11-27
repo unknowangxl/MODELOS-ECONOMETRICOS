@@ -260,7 +260,7 @@ END;
 // Prueba T para correlacion simple o multiple.
 R3PruebaT(multiple)
 BEGIN
- LOCAL sel,res,k,r,tv,tc,df,dec;
+ LOCAL sel,res,k,r,tv,tc,df,dec,op;
  IF multiple==0 THEN
   IF R3CalculaSimple()==0 THEN R2Aviso("Datos insuficientes o variable constante."); RETURN; END;
   op:=R3EligeUnaX("VARIABLE X");
@@ -278,7 +278,7 @@ BEGIN
  tv:=r*SQRT(df)/SQRT(1-r^2);
  tc:=STUDENT_ICDF(df,1-RmAlpha/2); dec:=ABS(tv)>tc;
  R2Ver("INFERENCIA ESTADISTICA: PRUEBA T",{
-  IFTE(multiple==0,"Correlacion simple Y con "+R3Nombre(sel(1)+1),"Correlacion multiple con "+STRING(sel)),
+  IFTE(multiple==0,"Correlacion simple Y con X"+STRING(op),"Correlacion multiple con "+STRING(sel)),
   "H0: rho = 0",
   "H1: rho <> 0",
   "Alfa = "+R2Fmt(RmAlpha,4),
@@ -295,7 +295,7 @@ END;
 // Prueba Z de Fisher para un valor especifico de rho (simple o multiple).
 R3PruebaZ(multiple)
 BEGIN
- LOCAL sel,res,k,r,rho,zv,zc,dec;
+ LOCAL sel,res,k,r,rho,zv,zc,dec,op;
  IF multiple==0 THEN
   IF R3CalculaSimple()==0 THEN R2Aviso("Datos insuficientes."); RETURN; END;
   op:=R3EligeUnaX("VARIABLE X");
@@ -351,7 +351,7 @@ END;
 
 R3IC(multiple)
 BEGIN
- LOCAL sel,res,r;
+ LOCAL sel,res,r,op;
  IF multiple==0 THEN
   IF R3CalculaSimple()==0 THEN R2Aviso("Datos insuficientes."); RETURN; END;
   op:=R3EligeUnaX("VARIABLE X");
