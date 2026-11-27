@@ -194,7 +194,7 @@ BEGIN
   subs:={
     {"Datos y modelo (lineal/no lineal)","1.1 IC para β0","1.2 IC para β1","1.3 Predicción","1.4 Utilidad del modelo (T)","1.5 Estadístico F (ANOVA)","1.6 Prueba de linealidad","1.7 Modelos no lineales"},
     {"Datos y modelo (lineal/no lineal)","2.1 Método matricial","2.2 IC para βi","2.3 Prueba de hipótesis βi","2.4 Poder predictivo (ANOVA)","2.5 Predicción","2.6 Adición de variables (F)"},
-    {"Datos y modelo (lineal/no lineal)","3.1 Inferencia estadística (T)","3.2 Para un valor exacto (Z)","3.3 IC para ρ y:x","3.4 Matriz correl. lineal simple","3.5 Correlación lineal múltiple","3.6 Determinación lineal múltiple","3.7 Inferencia estadística (T)","3.8 Para un valor específico (Z)","3.9 IC para ρ múltiple","3.10 Correlación parcial simple","3.11 Matriz correl. parcial","3.12 Inferencia parcial (F)","3.13 IC para ρ parcial","Mejor modelo de primer orden"},
+    {"Datos y modelo de correlacion","3.1 Inferencia estadística (T)","3.2 Para un valor exacto (Z)","3.3 IC para ρ y:x","3.4 Matriz correl. lineal simple","3.5 Correlación lineal múltiple","3.6 Determinación lineal múltiple","3.7 Inferencia estadística (T)","3.8 Para un valor específico (Z)","3.9 IC para ρ múltiple","3.10 Correlación parcial simple","3.11 Matriz correl. parcial","3.12 Inferencia parcial (F)","3.13 IC para ρ parcial","Mejor modelo de primer orden"},
     {"Datos y residuos","4.1 Heteroced.: gráfica Ŷ-e²","4.2 Heteroced.: Goldfeld-Quandt","4.3 Autocorr.: gráfica ei-1 vs ei","4.4 Autocorr.: corridas n<15","4.5 Autocorr.: corridas n>15","4.6 Autocorr.: Durbin-Watson","4.7 Multicolinealidad: correlación"}
   };
   m:=1; fin:=0;
