@@ -619,14 +619,17 @@ BEGIN
  R2VerM("VECTOR X0 (con intercepto)",vec,R2K+1,1);
 END;
 
-R2Submodelo(p)
+// Calcula un modelo con cualquier subconjunto de columnas de R2X.
+R2Submodelo(sel)
 BEGIN
- LOCAL i,j,dp,ap,ai,gp,bp,yh;
+ LOCAL i,j,q,dp,ap,ai,gp,bp,yh;
  LOCAL ym,sse,sst,ssr,det,e;
- dp:=MAKEMAT(0,R2N,p+1);
+ q:=SIZE(sel);
+ IF q<1 THEN RETURN {}; END;
+ dp:=MAKEMAT(0,R2N,q+1);
  FOR i FROM 1 TO R2N DO
   dp(i,1):=1;
-  FOR j FROM 1 TO p DO dp(i,j+1):=R2X(i,j); END;
+  FOR j FROM 1 TO q DO dp(i,j+1):=R2X(i,sel(j)); END;
  END;
  ap:=TRN(dp)*dp; det:=DET(ap);
  IF ABS(det)<0.0000000001 THEN RETURN {}; END;
@@ -636,7 +639,7 @@ BEGIN
  ym:=ym/R2N; sse:=0; sst:=0;
  FOR i FROM 1 TO R2N DO
   yh:=0;
-  FOR j FROM 1 TO p+1 DO yh:=yh+dp(i,j)*bp(j,1); END;
+  FOR j FROM 1 TO q+1 DO yh:=yh+dp(i,j)*bp(j,1); END;
   e:=R2Y(i,1)-yh; sse:=sse+e^2; sst:=sst+(R2Y(i,1)-ym)^2;
  END;
  ssr:=sst-sse; RETURN {ssr,sse};
@@ -644,30 +647,68 @@ END;
 
 EXPORT R2Adicion()
 BEGIN
- LOCAL ok,p,h,df,fc,fv,pv,dec;
- LOCAL res,ssri,ssrf,ssef,opciones;
+ LOCAL i,op,h,df,fc,fv,pv,dec,qf;
+ LOCAL ini,add,fin,res0,resf,ssri,ssrf,ssef;
+ LOCAL opciones,nombreIni,nombreAdd,nombreFin;
  IF R2K<2 THEN R2Aviso("Se necesitan al menos 2 variables X"); RETURN; END;
- ok:=R2Calcula();
- IF ok==0 THEN R2Aviso("Ingrese datos validos y estime el modelo"); RETURN; END;
- opciones:={};
- FOR p FROM 1 TO R2K-1 DO opciones:=CONCAT(opciones,{"Modelo inicial: X1 hasta X"+STRING(p)}); END;
- p:=R2Elige("2.6 CANTIDAD DE X EN MODELO INICIAL",opciones);
- IF p==0 THEN RETURN; END;
- h:=R2K-p; res:=R2Submodelo(p);
- IF SIZE(res)<2 THEN R2Aviso("El modelo inicial tiene colinealidad exacta"); RETURN; END;
- ssri:=res(1); ssrf:=R2SSR; ssef:=R2SSE; df:=R2N-R2K-1;
+ IF R2N<=2 THEN R2Aviso("No hay observaciones suficientes"); RETURN; END;
+ // Los dos modelos se estiman con los subconjuntos elegidos; no se exige que el modelo completo sea invertible.
+ // Primero el usuario define libremente las variables que ya estan en el modelo.
+ ini:={};
+ opciones:={"INCLUIR en modelo inicial","NO incluir"};
+ FOR i FROM 1 TO R2K DO
+  op:=R2Elige("MODELO INICIAL: variable X"+STRING(i),opciones);
+  IF op==0 THEN RETURN; END;
+  IF op==1 THEN ini:=CONCAT(ini,{i}); END;
+ END;
+ IF SIZE(ini)<1 THEN R2Aviso("Seleccione al menos una variable para el modelo inicial"); RETURN; END;
+
+ // Despues elige cuales de las variables restantes desea anadir.
+ add:={};
+ FOR i FROM 1 TO R2K DO
+  IF NOT (POS(ini,i)>0) THEN
+   op:=R2Elige("ANADIR X"+STRING(i)+" al modelo final?",{"SI, anadir","NO, dejar fuera"});
+   IF op==0 THEN RETURN; END;
+   IF op==1 THEN add:=CONCAT(add,{i}); END;
+  END;
+ END;
+ h:=SIZE(add);
+ IF h<1 THEN R2Aviso("Seleccione al menos una variable para anadir"); RETURN; END;
+ fin:=CONCAT(ini,add); qf:=SIZE(fin);
+ IF R2N<=qf+1 THEN R2Aviso("No hay grados de libertad para el modelo final"); RETURN; END;
+
+ res0:=R2Submodelo(ini);
+ IF SIZE(res0)<2 THEN R2Aviso("El modelo inicial tiene colinealidad exacta"); RETURN; END;
+ resf:=R2Submodelo(fin);
+ IF SIZE(resf)<2 THEN R2Aviso("El modelo final tiene colinealidad exacta"); RETURN; END;
+ ssri:=res0(1); ssrf:=resf(1); ssef:=resf(2); df:=R2N-qf-1;
  IF df<=0 OR ssef<=0 THEN R2Aviso("Grados de libertad o SSE final no validos"); RETURN; END;
- IF ssrf<ssri THEN R2Aviso("SSR final menor que SSR inicial; revise los datos"); RETURN; END;
+ IF ssrf<ssri-0.0000001 THEN R2Aviso("SSR final menor que SSR inicial; revise los datos"); RETURN; END;
  fv:=((ssrf-ssri)/h)/(ssef/df);
  fc:=FISHER_ICDF(h,df,1-RmAlpha); pv:=1-FISHER_CDF(h,df,fv); dec:=fv>fc;
+
+ nombreIni:=""; nombreAdd:=""; nombreFin:="";
+ FOR i FROM 1 TO SIZE(ini) DO
+  IF i>1 THEN nombreIni:=nombreIni+", "; END;
+  nombreIni:=nombreIni+"X"+STRING(ini(i));
+ END;
+ FOR i FROM 1 TO SIZE(add) DO
+  IF i>1 THEN nombreAdd:=nombreAdd+", "; END;
+  nombreAdd:=nombreAdd+"X"+STRING(add(i));
+ END;
+ FOR i FROM 1 TO SIZE(fin) DO
+  IF i>1 THEN nombreFin:=nombreFin+", "; END;
+  nombreFin:=nombreFin+"X"+STRING(fin(i));
+ END;
  R2Ver("2.6 ADICION DE VARIABLES: F PARCIAL",{
-  "Modelo inicial: X1,...,Xp (p="+STRING(p)+")",
-  "Modelo final: X1,...,Xk (k="+STRING(R2K)+")",
-  "H0: las variables añadidas no mejoran Y",
-  "H1: al menos una variable añadida mejora Y",
+  "Modelo inicial: "+nombreIni,
+  "Variables anadidas: "+nombreAdd,
+  "Modelo final: "+nombreFin,
+  "H0: las variables anadidas no mejoran Y",
+  "H1: al menos una variable anadida mejora Y",
   "H0: gamma1 = ... = gamma_h = 0",
   "Alfa = "+R2Fmt(RmAlpha,4),
-  "n = "+STRING(R2N)+" p = "+STRING(p)+" h = "+STRING(h),
+  "n = "+STRING(R2N)+" h = "+STRING(h),
   "gl error final = "+STRING(df),
   "SSR inicial = "+R2Fmt(ssri,6),
   "SSR final = "+R2Fmt(ssrf,6),
@@ -677,7 +718,7 @@ BEGIN
   "F critico = "+R2Fmt(fc,6),
   "p-valor = "+R2Fmt(pv,7),
   "Rechazar H0 si Fcalc > Fcrit",
-  IFTE(dec,"Se rechaza H0: las variables añadidas mejoran la prediccion","No se rechaza H0: no hay evidencia de mejora")
+  IFTE(dec,"Se rechaza H0: las variables anadidas mejoran la prediccion","No se rechaza H0: no hay evidencia de mejora")
  });
 END;
 
