@@ -113,32 +113,30 @@ END;
 
 R2Elige(tit,items)
 BEGIN
- LOCAL s,n,k,fin,i,y,r;
- n:=SIZE(items); s:=1; fin:=0; r:=0;
+ LOCAL s,n,k,fin,i,y,r,top;
+ n:=SIZE(items); s:=1; top:=1; fin:=0; r:=0;
  REPEAT
   RECT_P(G1,0,0,319,239,RGB(8,16,40),RGB(8,16,40));
   R2Cab(tit,RGB(80,220,130),4);
-  FOR i FROM 1 TO n DO
-   y:=36+(i-1)*29;
-   IF y<210 THEN
-    IF i==s THEN
-     RECT_P(G1,4,y,315,y+25,RGB(255,255,255),RGB(30,80,130));
-     TEXTOUT_P(items(i),G1,10,y+5,3,RGB(0,0,0));
-    ELSE
-     RECT_P(G1,4,y,315,y+25,RGB(70,80,120),RGB(16,28,64));
-     TEXTOUT_P(items(i),G1,10,y+5,3,RGB(255,255,255));
-    END;
+  FOR i FROM top TO MIN(n,top+5) DO
+   y:=36+(i-top)*29;
+   IF i==s THEN
+    RECT_P(G1,4,y,315,y+25,RGB(255,255,255),RGB(30,80,130));
+    TEXTOUT_P(items(i),G1,10,y+5,3,RGB(0,0,0));
+   ELSE
+    RECT_P(G1,4,y,315,y+25,RGB(70,80,120),RGB(16,28,64));
+    TEXTOUT_P(items(i),G1,10,y+5,3,RGB(255,255,255));
    END;
   END;
   R2Pie("ENTER: elegir   ESC: volver");
   BLIT_P(G0,G1); k:=R2Espera();
-  IF k==2 THEN s:=MAX(1,s-1); END;
-  IF k==12 THEN s:=MIN(n,s+1); END;
+  IF k==2 THEN s:=MAX(1,s-1); IF s<top THEN top:=s; END; END;
+  IF k==12 THEN s:=MIN(n,s+1); IF s>top+5 THEN top:=s-5; END; END;
   IF k==30 THEN r:=s; fin:=1; END;
   IF k==4 THEN fin:=1; END;
   IF k==1000 THEN
    IF TapY>=36 AND TapY<210 THEN
-    i:=IP((TapY-36)/29)+1;
+    i:=top+IP((TapY-36)/29);
     IF i>=1 AND i<=n THEN r:=i; fin:=1; END;
    END;
    IF TapY>=219 THEN fin:=1; END;
