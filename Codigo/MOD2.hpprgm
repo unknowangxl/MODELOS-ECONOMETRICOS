@@ -652,8 +652,7 @@ BEGIN
  LOCAL opciones,nombreIni,nombreAdd,nombreFin;
  IF R2K<2 THEN R2Aviso("Se necesitan al menos 2 variables X"); RETURN; END;
  IF R2N<=2 THEN R2Aviso("No hay observaciones suficientes"); RETURN; END;
- IF R2Calcula()==0 THEN R2Aviso("Ingrese datos validos y estime el modelo"); RETURN; END;
-
+ // Los dos modelos se estiman con los subconjuntos elegidos; no se exige que el modelo completo sea invertible.
  // Primero el usuario define libremente las variables que ya estan en el modelo.
  ini:={};
  opciones:={"INCLUIR en modelo inicial","NO incluir"};
@@ -676,7 +675,7 @@ BEGIN
  h:=SIZE(add);
  IF h<1 THEN R2Aviso("Seleccione al menos una variable para anadir"); RETURN; END;
  fin:=CONCAT(ini,add); qf:=SIZE(fin);
- IF qf>=R2N THEN R2Aviso("No hay grados de libertad para el modelo final"); RETURN; END;
+ IF R2N<=qf+1 THEN R2Aviso("No hay grados de libertad para el modelo final"); RETURN; END;
 
  res0:=R2Submodelo(ini);
  IF SIZE(res0)<2 THEN R2Aviso("El modelo inicial tiene colinealidad exacta"); RETURN; END;
