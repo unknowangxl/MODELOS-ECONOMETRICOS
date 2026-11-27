@@ -313,7 +313,7 @@ BEGIN
  R2Aviso("Dimensiones actualizadas. Se reiniciaron los datos.");
 END;
 
-R2VerM(tit,M,nr,nc)
+R2VerM(tit,Mat,nr,nc)
 BEGIN
  LOCAL top,ini,fin,k,i,j,y,x;
  LOCAL cw,cs,done;
@@ -335,7 +335,7 @@ BEGIN
     TEXTOUT_P("[",G1,23,y+1,3,RGB(255,255,255));
     FOR j FROM 1 TO cs DO
      x:=34+(j-1)*94;
-     TEXTOUT_P(R2Fmt(M(top+i-1,ini+j-1),3),G1,x,y+4,2,RGB(255,255,255));
+     TEXTOUT_P(R2Fmt(Mat(top+i-1,ini+j-1),3),G1,x,y+4,2,RGB(255,255,255));
     END;
     TEXTOUT_P("]",G1,34+cs*94-9,y+1,3,RGB(255,255,255));
    END;
@@ -391,7 +391,7 @@ BEGIN
  R2A:=TRN(R2D)*R2D;
  det:=DET(R2A);
  IF ABS(det)<0.0000000001 THEN RETURN 0; END;
- R2AI:=INV(R2A);
+ R2AI:=R2A^(-1);
  R2G:=TRN(R2D)*R2Y;
  R2B:=R2AI*R2G;
  ym:=0;
