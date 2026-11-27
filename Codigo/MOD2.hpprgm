@@ -228,7 +228,8 @@ END;
 
 R2Editor()
 BEGIN
- LOCAL top,sel,fin,k,i,j,idx,y,x0,cw,xx,col;
+ LOCAL top,sel,fin,k,i,j,idx,y;
+ LOCAL x0,cw,xx,col;
  top:=1; sel:=1; fin:=0;
  REPEAT
   RECT_P(G1,0,0,319,239,RGB(8,16,40),RGB(8,16,40));
@@ -371,7 +372,8 @@ END;
 
 R2VerM(tit,M,nr,nc)
 BEGIN
- LOCAL top,ini,fin,k,i,j,y,x,cw,cs,cc,done,lab;
+ LOCAL top,ini,fin,k,i,j,y,x;
+ LOCAL cw,cs,done;
  top:=1; ini:=1; done:=0;
  REPEAT
   RECT_P(G1,0,0,319,239,RGB(8,16,40),RGB(8,16,40));
@@ -498,7 +500,8 @@ END;
 
 EXPORT R2ANOVA()
 BEGIN
- LOCAL ok,df,k,n,msr,mse,fv,fc,pv,dec;
+ LOCAL ok,df,k,n,msr,mse,fv,fc;
+ LOCAL pv,dec;
  ok:=R2Calcula();
  IF ok==0 THEN R2Aviso("Primero ingrese datos validos y estime el modelo"); RETURN; END;
  df:=R2DF; k:=R2K; n:=R2N;
