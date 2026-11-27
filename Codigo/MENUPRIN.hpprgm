@@ -138,6 +138,11 @@ BEGIN
     DIMGROB_P(G1,320,240,RGB(8,16,40));
     RETURN;
   END;
+  IF mi==3 THEN
+    R3Abrir(s);
+    DIMGROB_P(G1,320,240,RGB(8,16,40));
+    RETURN;
+  END;
   Pendiente(mi,tit,col);
 END;
 Submenu(mi,tit,items,col)
