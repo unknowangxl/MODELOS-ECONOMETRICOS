@@ -12,6 +12,7 @@ EXPORT R2SST:=0;
 EXPORT R2SSR:=0;
 EXPORT R2S:=0;
 EXPORT R2DF:=0;
+EXPORT R2Cancel:=0;
 
 R2Fmt(x,d)
 BEGIN
@@ -142,7 +143,7 @@ END;
 R2NumEdit(tit,valor0)
 BEGIN
  LOCAL buf,k,i,j,x,y,celda,v;
- buf:=STRING(valor0);
+ buf:=STRING(valor0); R2Cancel:=0;
  REPEAT
   RECT_P(G1,0,0,319,239,RGB(8,16,40),RGB(8,16,40));
   R2Cab(tit,RGB(255,215,0),4);
@@ -165,7 +166,7 @@ BEGIN
   END;
   R2Pie("Introduce un numero; ENTER confirma");
   BLIT_P(G0,G1); k:=R2Espera();
-  IF k==4 THEN RETURN -1; END;
+  IF k==4 THEN R2Cancel:=1; RETURN 0; END;
   IF k==32 THEN buf:=buf+"7"; END;
   IF k==33 THEN buf:=buf+"8"; END;
   IF k==34 THEN buf:=buf+"9"; END;
@@ -195,7 +196,7 @@ BEGIN
    IF i==4 AND j==2 THEN celda:="."; END;
    IF i==4 AND j==3 THEN celda:="0"; END;
    IF i==5 AND j==1 THEN IF SIZE(buf)>1 THEN buf:=LEFT(buf,SIZE(buf)-1); ELSE buf:="0"; END; END;
-   IF i==5 AND j==2 THEN RETURN -1; END;
+   IF i==5 AND j==2 THEN R2Cancel:=1; RETURN 0; END;
    IF i==5 AND j==3 THEN
     IF buf=="" OR buf=="-" OR buf=="." OR buf=="-." THEN
      R2Aviso("Valor no valido");
@@ -221,7 +222,7 @@ BEGIN
  LOCAL v;
  IF col<=R2K THEN v:=R2NumEdit("EDITAR X"+STRING(col)+" FILA "+STRING(fila),R2X(fila,col));
  ELSE v:=R2NumEdit("EDITAR Y FILA "+STRING(fila),R2Y(fila,1)); END;
- IF v==-1 THEN RETURN; END;
+ IF R2Cancel==1 THEN RETURN; END;
  IF col<=R2K THEN R2X(fila,col):=v; ELSE R2Y(fila,1):=v; END;
 END;
 
@@ -471,7 +472,7 @@ BEGIN
  ok:=R2Calcula();
  IF ok==0 THEN R2Aviso("Primero ingrese datos validos y estime el modelo"); RETURN; END;
  df:=R2DF; tc:=STUDENT_ICDF(df,1-RmAlpha/2);
- FOR i FROM 1 TO R2K+1 DO
+ FOR i FROM 2 TO R2K+1 DO
   ee:=R2S*SQRT(R2AI(i,i));
   IF ee<=0 THEN R2Aviso("Error estandar nulo para beta"+STRING(i-1)); ELSE
    tv:=R2B(i,1)/ee;
