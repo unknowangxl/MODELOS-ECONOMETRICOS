@@ -1,6 +1,6 @@
 // MODULO 2 - REGRESION LINEAL MULTIPLE
 // DEPENDENCIA: MOD1.hpprgm (exporta RmAlpha y RmConfigAlpha).
-// ORDEN DE COMPILACION: MOD1 -> MOD2 -> MENUPRIN.
+// ORDEN DE COMPILACION: MOD1 -> MOD2 -> MOD3 -> MENUPRIN.
 // En HP Prime, compile primero los programas que exportan funciones/variables usadas aqui.
 
 EXPORT R2N:=10;
@@ -21,7 +21,15 @@ EXPORT R2S:=0;
 EXPORT R2DF:=0;
 EXPORT R2Cancel:=0;
 
-R2Fmt(x,d)
+// DATOS COMPARTIDOS ENTRE MODULOS (contrato MOD2 <-> MOD3).
+// Solo se transfieren observaciones originales: X y Y, nunca ln(Y), ln(X) ni resultados.
+EXPORT RComValido:=0;
+EXPORT RComN:=0;
+EXPORT RComK:=0;
+EXPORT RComX:=MAKEMAT(0,30,5);
+EXPORT RComY:=MAKEMAT(0,30,1);
+
+EXPORT R2Fmt(x,d)
 BEGIN
  RETURN STRING(ROUND(x,d));
 END;
@@ -72,7 +80,7 @@ BEGIN
  TEXTOUT_P(c,G1,230,222,3,RGB(255,255,255));
 END;
 
-R2Aviso(t)
+EXPORT R2Aviso(t)
 BEGIN
  LOCAL k;
  RECT_P(G1,0,0,319,239,RGB(8,16,40),RGB(8,16,40));
@@ -83,7 +91,7 @@ BEGIN
  k:=R2Espera();
 END;
 
-R2Ver(tit,ls)
+EXPORT R2Ver(tit,ls)
 BEGIN
  LOCAL i,k,y,top,fin;
  top:=1; fin:=0;
@@ -111,7 +119,7 @@ BEGIN
  UNTIL fin==1;
 END;
 
-R2Elige(tit,items)
+EXPORT R2Elige(tit,items)
 BEGIN
  LOCAL s,n,k,fin,i,y,r,top;
  n:=SIZE(items); s:=1; top:=1; fin:=0; r:=0;
@@ -145,7 +153,7 @@ BEGIN
  RETURN r;
 END;
 
-R2NumEdit(tit,valor0)
+EXPORT R2NumEdit(tit,valor0)
 BEGIN
  LOCAL buf,k,i,j,x,y,celda,v;
  buf:=STRING(valor0); R2Cancel:=0;
@@ -318,7 +326,7 @@ BEGIN
  R2Aviso("Dimensiones actualizadas. Se reiniciaron los datos.");
 END;
 
-R2VerM(tit,Mat,nr,nc)
+EXPORT R2VerM(tit,Mat,nr,nc)
 BEGIN
  LOCAL top,ini,fin,k,i,j,y,x;
  LOCAL cw,cs,done;
@@ -447,6 +455,69 @@ BEGIN
  R2Ver("TABLA DE SUMATORIAS: "+R2NombreModelo(),ls);
 END;
 
+
+// API compartida MOD2 <-> MOD3.
+// MOD3 puede llamar esta funcion pasando sus matrices originales X e Y.
+// Contrato: n entre 5 y 30; k entre 1 y 5; X es n x k; Y es n x 1.
+// Solo se copian datos originales: nunca ln(X), ln(Y), coeficientes ni resultados.
+EXPORT R2PublicaDatos(n,k,x,y)
+BEGIN
+ LOCAL i,j;
+ IF n<5 OR n>30 OR k<1 OR k>5 THEN
+  R2Aviso("No se pueden compartir datos: se requiere n=5..30 y k=1..5.");
+  RETURN 0;
+ END;
+ RComX:=MAKEMAT(0,30,5);
+ RComY:=MAKEMAT(0,30,1);
+ FOR i FROM 1 TO n DO
+  RComY(i,1):=y(i,1);
+  FOR j FROM 1 TO k DO
+   RComX(i,j):=x(i,j);
+  END;
+ END;
+ RComN:=n; RComK:=k; RComValido:=1;
+ RETURN 1;
+END;
+
+// Publica la tabla activa de MOD2 en el espacio compartido.
+// No altera el tipo de modelo ni las matrices de calculo de MOD2.
+EXPORT R2ExportaDatos()
+BEGIN
+ IF R2PublicaDatos(R2N,R2K,R2X,R2Y)==1 THEN
+  R2Aviso("Datos originales exportados. MOD3 ya puede importarlos.");
+ END;
+END;
+
+// Copia al MOD2 los datos originales previamente publicados por MOD3.
+// Requiere confirmacion porque reemplaza la tabla de datos activa de MOD2.
+EXPORT R2ImportaDatos()
+BEGIN
+ LOCAL op,i,j;
+ IF RComValido<>1 THEN
+  R2Aviso("No hay datos compartidos. Exporte primero desde MOD3.");
+  RETURN;
+ END;
+ IF RComN<5 OR RComN>30 OR RComK<1 OR RComK>5 THEN
+  R2Aviso("Dimensiones compartidas no validas (n: 5-30; k: 1-5).");
+  RETURN;
+ END;
+ op:=R2Elige("REEMPLAZAR DATOS ACTUALES DE MOD2?",{"SI, importar "+STRING(RComN)+" x "+STRING(RComK),"NO, conservar datos"});
+ IF op<>1 THEN RETURN; END;
+ R2N:=RComN; R2K:=RComK;
+ R2X:=MAKEMAT(0,R2N,R2K); R2Y:=MAKEMAT(0,R2N,1);
+ FOR i FROM 1 TO R2N DO
+  R2Y(i,1):=RComY(i,1);
+  FOR j FROM 1 TO R2K DO R2X(i,j):=RComX(i,j); END;
+ END;
+ R2D:=MAKEMAT(0,R2N,R2K+1);
+ R2U:=MAKEMAT(0,R2N,1);
+ R2A:=MAKEMAT(0,R2K+1,R2K+1);
+ R2G:=MAKEMAT(0,R2K+1,1);
+ R2AI:=MAKEMAT(0,R2K+1,R2K+1);
+ R2B:=MAKEMAT(0,R2K+1,1);
+ R2Aviso("Importacion completada. Se conservaron los datos originales.");
+END;
+
 R2Datos()
 BEGIN
  LOCAL op,fin;
@@ -459,7 +530,9 @@ BEGIN
    "4 Elegir tipo de modelo",
    "5 Ver tabla de sumatorias",
    "6 Configurar alfa",
-   "7 Volver"
+   "7 Exportar datos al espacio comun",
+   "8 Importar datos del espacio comun",
+   "9 Volver"
   });
   IF op==1 THEN R2Editor(); END;
   IF op==2 THEN R2Config(); END;
@@ -470,7 +543,9 @@ BEGIN
   IF op==4 THEN R2TipoModelo(); END;
   IF op==5 THEN R2Sumatorias(); END;
   IF op==6 THEN RmConfigAlpha(); END;
-  IF op==7 OR op==0 THEN fin:=1; END;
+  IF op==7 THEN R2ExportaDatos(); END;
+  IF op==8 THEN R2ImportaDatos(); END;
+  IF op==9 OR op==0 THEN fin:=1; END;
  UNTIL fin==1;
 END;
 
