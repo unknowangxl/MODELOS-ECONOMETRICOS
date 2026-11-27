@@ -1,0 +1,564 @@
+﻿EXPORT R2N:=10;
+EXPORT R2K:=2;
+EXPORT R2X:=MAKEMAT(0,10,2);
+EXPORT R2Y:=MAKEMAT(0,10,1);
+EXPORT R2D:=MAKEMAT(0,10,3);
+EXPORT R2A:=MAKEMAT(0,3,3);
+EXPORT R2G:=MAKEMAT(0,3,1);
+EXPORT R2AI:=MAKEMAT(0,3,3);
+EXPORT R2B:=MAKEMAT(0,3,1);
+EXPORT R2SSE:=0;
+EXPORT R2SST:=0;
+EXPORT R2SSR:=0;
+EXPORT R2S:=0;
+EXPORT R2DF:=0;
+
+R2Fmt(x,d)
+BEGIN
+ RETURN STRING(ROUND(x,d));
+END;
+
+R2Espera()
+BEGIN
+ LOCAL k,m,p,tocando,x,y,j,c;
+ LOCAL kk;
+ tocando:=0; x:=0; y:=0;
+ kk:={2,12,30,4,19,32,33,34,37,38,39,42,43,44,45,47,48};
+ REPEAT
+  FOR j FROM 1 TO SIZE(kk) DO
+   c:=kk(j);
+   IF ISKEYDOWN(c) THEN
+    REPEAT WAIT(0.02); UNTIL NOT ISKEYDOWN(c);
+    RETURN c;
+   END;
+  END;
+  m:=MOUSE; p:={};
+  IF TYPE(m)==6 THEN IF SIZE(m)>0 THEN p:=m(1); END; END;
+  IF TYPE(p)==6 AND SIZE(p)>=2 THEN
+   x:=p(1); y:=p(2); tocando:=1;
+  ELSE
+   IF tocando==1 THEN TapX:=x; TapY:=y; RETURN 1000; END;
+  END;
+ UNTIL 0;
+END;
+
+R2Cab(t,c,f)
+BEGIN
+ RECT_P(G1,0,0,319,27,c,c);
+ TEXTOUT_P(t,G1,7,5,f,RGB(0,0,0));
+END;
+
+R2Pie(t)
+BEGIN
+ RECT_P(G1,0,219,319,239,RGB(30,40,80),RGB(30,40,80));
+ TEXTOUT_P(t,G1,5,223,3,RGB(210,225,255));
+END;
+
+R2PieNav(a,b,c)
+BEGIN
+ RECT_P(G1,0,219,105,239,RGB(255,255,255),RGB(30,40,80));
+ RECT_P(G1,107,219,212,239,RGB(255,255,255),RGB(120,30,30));
+ RECT_P(G1,214,219,319,239,RGB(255,255,255),RGB(30,40,80));
+ TEXTOUT_P(a,G1,20,222,3,RGB(255,255,255));
+ TEXTOUT_P(b,G1,120,222,3,RGB(255,255,255));
+ TEXTOUT_P(c,G1,230,222,3,RGB(255,255,255));
+END;
+
+R2Aviso(t)
+BEGIN
+ LOCAL k;
+ RECT_P(G1,0,0,319,239,RGB(8,16,40),RGB(8,16,40));
+ R2Cab("AVISO",RGB(255,70,70),4);
+ TEXTOUT_P(t,G1,12,85,3,RGB(255,255,255));
+ R2Pie("Pulsa una tecla o toca la pantalla");
+ BLIT_P(G0,G1);
+ k:=R2Espera();
+END;
+
+R2Ver(tit,ls)
+BEGIN
+ LOCAL i,k,y,top,fin;
+ top:=1; fin:=0;
+ REPEAT
+  RECT_P(G1,0,0,319,239,RGB(8,16,40),RGB(8,16,40));
+  R2Cab(tit,RGB(255,215,0),4);
+  TEXTOUT_P("Alfa = "+R2Fmt(RmAlpha,4),G1,8,30,2,RGB(0,230,255));
+  FOR i FROM 1 TO 8 DO
+   IF top+i-1<=SIZE(ls) THEN
+    y:=48+(i-1)*20;
+    TEXTOUT_P(ls(top+i-1),G1,7,y,3,RGB(235,245,255));
+   END;
+  END;
+  R2PieNav("SUBIR","VOLVER","BAJAR");
+  BLIT_P(G0,G1);
+  k:=R2Espera();
+  IF k==2 THEN top:=MAX(1,top-1); END;
+  IF k==12 THEN top:=MIN(MAX(1,SIZE(ls)-7),top+1); END;
+  IF k==4 OR k==30 THEN fin:=1; END;
+  IF k==1000 AND TapY>=219 THEN
+   IF TapX<107 THEN top:=MAX(1,top-4); END;
+   IF TapX>=107 AND TapX<214 THEN fin:=1; END;
+   IF TapX>=214 THEN top:=MIN(MAX(1,SIZE(ls)-7),top+4); END;
+  END;
+ UNTIL fin==1;
+END;
+
+R2Elige(tit,items)
+BEGIN
+ LOCAL s,n,k,fin,i,y,r;
+ n:=SIZE(items); s:=1; fin:=0; r:=0;
+ REPEAT
+  RECT_P(G1,0,0,319,239,RGB(8,16,40),RGB(8,16,40));
+  R2Cab(tit,RGB(80,220,130),4);
+  FOR i FROM 1 TO n DO
+   y:=36+(i-1)*29;
+   IF y<210 THEN
+    IF i==s THEN
+     RECT_P(G1,4,y,315,y+25,RGB(255,255,255),RGB(30,80,130));
+     TEXTOUT_P(items(i),G1,10,y+5,3,RGB(0,0,0));
+    ELSE
+     RECT_P(G1,4,y,315,y+25,RGB(70,80,120),RGB(16,28,64));
+     TEXTOUT_P(items(i),G1,10,y+5,3,RGB(255,255,255));
+    END;
+   END;
+  END;
+  R2Pie("ENTER: elegir   ESC: volver");
+  BLIT_P(G0,G1); k:=R2Espera();
+  IF k==2 THEN s:=MAX(1,s-1); END;
+  IF k==12 THEN s:=MIN(n,s+1); END;
+  IF k==30 THEN r:=s; fin:=1; END;
+  IF k==4 THEN fin:=1; END;
+  IF k==1000 THEN
+   IF TapY>=36 AND TapY<210 THEN
+    i:=IP((TapY-36)/29)+1;
+    IF i>=1 AND i<=n THEN r:=i; fin:=1; END;
+   END;
+   IF TapY>=219 THEN fin:=1; END;
+  END;
+ UNTIL fin==1;
+ RETURN r;
+END;
+
+R2NumEdit(tit,valor0)
+BEGIN
+ LOCAL buf,k,i,j,x,y,celda,v;
+ buf:=STRING(valor0);
+ REPEAT
+  RECT_P(G1,0,0,319,239,RGB(8,16,40),RGB(8,16,40));
+  R2Cab(tit,RGB(255,215,0),4);
+  TEXTOUT_P("Valor: "+buf,G1,12,34,4,RGB(0,230,255));
+  FOR i FROM 1 TO 5 DO
+   FOR j FROM 1 TO 3 DO
+    x:=8+(j-1)*104; y:=57+(i-1)*31; celda:="";
+    IF i==1 THEN celda:=STRING(j+6); END;
+    IF i==2 THEN celda:=STRING(j+3); END;
+    IF i==3 THEN celda:=STRING(j); END;
+    IF i==4 AND j==1 THEN celda:="-"; END;
+    IF i==4 AND j==2 THEN celda:="."; END;
+    IF i==4 AND j==3 THEN celda:="0"; END;
+    IF i==5 AND j==1 THEN celda:="BORRAR"; END;
+    IF i==5 AND j==2 THEN celda:="CANCELAR"; END;
+    IF i==5 AND j==3 THEN celda:="ACEPTAR"; END;
+    RECT_P(G1,x,y,x+96,y+27,RGB(120,150,210),RGB(35,55,100));
+    TEXTOUT_P(celda,G1,x+12,y+7,3,RGB(255,255,255));
+   END;
+  END;
+  R2Pie("Introduce un numero; ENTER confirma");
+  BLIT_P(G0,G1); k:=R2Espera();
+  IF k==4 THEN RETURN -1; END;
+  IF k==32 THEN buf:=buf+"7"; END;
+  IF k==33 THEN buf:=buf+"8"; END;
+  IF k==34 THEN buf:=buf+"9"; END;
+  IF k==37 THEN buf:=buf+"4"; END;
+  IF k==38 THEN buf:=buf+"5"; END;
+  IF k==39 THEN buf:=buf+"6"; END;
+  IF k==42 THEN buf:=buf+"1"; END;
+  IF k==43 THEN buf:=buf+"2"; END;
+  IF k==44 THEN buf:=buf+"3"; END;
+  IF k==47 THEN buf:=buf+"0"; END;
+  IF k==48 THEN IF INSTRING(buf,".")==0 THEN buf:=buf+"."; END; END;
+  IF k==45 THEN IF LEFT(buf,1)=="-" THEN buf:=RIGHT(buf,SIZE(buf)-1); ELSE buf:="-"+buf; END; END;
+  IF k==19 THEN IF SIZE(buf)>1 THEN buf:=LEFT(buf,SIZE(buf)-1); ELSE buf:="0"; END; END;
+  IF k==30 THEN
+   IF buf=="" OR buf=="-" OR buf=="." OR buf=="-." THEN
+    R2Aviso("Valor no valido");
+   ELSE
+    v:=EXPR(buf); RETURN v;
+   END;
+  END;
+  IF k==1000 AND TapY>=57 AND TapY<212 THEN
+   i:=IP((TapY-57)/31)+1; j:=IP(TapX/104)+1; celda:="";
+   IF i==1 AND j>=1 AND j<=3 THEN celda:=STRING(j+6); END;
+   IF i==2 AND j>=1 AND j<=3 THEN celda:=STRING(j+3); END;
+   IF i==3 AND j>=1 AND j<=3 THEN celda:=STRING(j); END;
+   IF i==4 AND j==1 THEN celda:="-"; END;
+   IF i==4 AND j==2 THEN celda:="."; END;
+   IF i==4 AND j==3 THEN celda:="0"; END;
+   IF i==5 AND j==1 THEN IF SIZE(buf)>1 THEN buf:=LEFT(buf,SIZE(buf)-1); ELSE buf:="0"; END; END;
+   IF i==5 AND j==2 THEN RETURN -1; END;
+   IF i==5 AND j==3 THEN
+    IF buf=="" OR buf=="-" OR buf=="." OR buf=="-." THEN
+     R2Aviso("Valor no valido");
+    ELSE
+     v:=EXPR(buf); RETURN v;
+    END;
+   END;
+   IF celda=="-" THEN
+    IF LEFT(buf,1)=="-" THEN buf:=RIGHT(buf,SIZE(buf)-1); ELSE buf:="-"+buf; END;
+   ELSE
+    IF celda=="." THEN
+     IF INSTRING(buf,".")==0 THEN buf:=buf+"."; END;
+    ELSE
+     IF celda<>"" THEN IF buf=="0" THEN buf:=celda; ELSE buf:=buf+celda; END; END;
+    END;
+   END;
+  END;
+ UNTIL 0;
+END;
+
+R2EditCelda(fila,col)
+BEGIN
+ LOCAL v;
+ IF col<=R2K THEN v:=R2NumEdit("EDITAR X"+STRING(col)+" FILA "+STRING(fila),R2X(fila,col));
+ ELSE v:=R2NumEdit("EDITAR Y FILA "+STRING(fila),R2Y(fila,1)); END;
+ IF v==-1 THEN RETURN; END;
+ IF col<=R2K THEN R2X(fila,col):=v; ELSE R2Y(fila,1):=v; END;
+END;
+
+R2Editor()
+BEGIN
+ LOCAL top,sel,fin,k,i,j,idx,y,x0,cw,xx,col;
+ top:=1; sel:=1; fin:=0;
+ REPEAT
+  RECT_P(G1,0,0,319,239,RGB(8,16,40),RGB(8,16,40));
+  R2Cab("EDITOR DE DATOS: REGRESION MULTIPLE",RGB(255,215,0),3);
+  TEXTOUT_P("n="+STRING(R2N)+"  k="+STRING(R2K)+"  Toca una celda",G1,5,30,2,RGB(0,230,255));
+  x0:=29; cw:=IP(286/(R2K+1));
+  RECT_P(G1,3,46,27,65,RGB(255,255,255),RGB(0,100,65));
+  TEXTOUT_P("i",G1,11,50,2,RGB(255,255,255));
+  FOR j FROM 1 TO R2K+1 DO
+   xx:=x0+(j-1)*cw;
+   RECT_P(G1,xx,46,xx+cw-2,65,RGB(255,255,255),RGB(0,100,65));
+   IF j<=R2K THEN TEXTOUT_P("X"+STRING(j),G1,xx+3,50,2,RGB(255,255,255));
+   ELSE TEXTOUT_P("Y",G1,xx+3,50,2,RGB(255,255,255)); END;
+  END;
+  FOR i FROM 1 TO 6 DO
+   idx:=top+i-1; y:=66+(i-1)*24;
+   IF idx<=R2N THEN
+    IF idx==sel THEN col:=RGB(45,75,130); ELSE col:=RGB(16,28,64); END;
+    RECT_P(G1,3,y,27,y+22,RGB(70,80,120),col);
+    TEXTOUT_P(STRING(idx),G1,8,y+6,2,RGB(230,240,255));
+    FOR j FROM 1 TO R2K+1 DO
+     xx:=x0+(j-1)*cw;
+     RECT_P(G1,xx,y,xx+cw-2,y+22,RGB(70,80,120),col);
+     IF j<=R2K THEN TEXTOUT_P(R2Fmt(R2X(idx,j),2),G1,xx+2,y+6,1,RGB(255,255,255));
+     ELSE TEXTOUT_P(R2Fmt(R2Y(idx,1),2),G1,xx+2,y+6,1,RGB(0,230,255)); END;
+    END;
+   END;
+  END;
+  TEXTOUT_P("Fila seleccionada: "+STRING(sel),G1,5,213,2,RGB(255,215,0));
+  R2PieNav("SUBIR","VOLVER","BAJAR");
+  BLIT_P(G0,G1); k:=R2Espera();
+  IF k==2 THEN sel:=MAX(1,sel-1); IF sel<top THEN top:=sel; END; END;
+  IF k==12 THEN sel:=MIN(R2N,sel+1); IF sel>top+5 THEN top:=sel-5; END; END;
+  IF k==4 THEN fin:=1; END;
+  IF k==1000 THEN
+   IF TapY>=219 THEN
+    IF TapX<107 THEN sel:=MAX(1,sel-5); top:=MAX(1,sel); END;
+    IF TapX>=107 AND TapX<214 THEN fin:=1; END;
+    IF TapX>=214 THEN sel:=MIN(R2N,sel+5); top:=MIN(MAX(1,R2N-5),sel-5); END;
+   ELSE
+    IF TapY>=66 AND TapY<210 THEN
+     i:=IP((TapY-66)/24)+1; idx:=top+i-1;
+     IF idx<=R2N THEN
+      sel:=idx;
+      IF TapX<28 THEN
+       R2EditCelda(idx,R2K+1);
+      ELSE
+       j:=IP((TapX-x0)/cw)+1;
+       IF j>=1 AND j<=R2K+1 THEN R2EditCelda(idx,j); END;
+      END;
+     END;
+    END;
+   END;
+  END;
+  IF k==30 THEN R2EditCelda(sel,1); END;
+ UNTIL fin==1;
+END;
+
+R2Config()
+BEGIN
+ LOCAL nk,nn,op;
+ nk:=R2Elige("NUMERO DE VARIABLES X",{ "1 variable","2 variables","3 variables","4 variables","5 variables"});
+ IF nk==0 THEN RETURN; END;
+ nn:=R2Elige("NUMERO DE OBSERVACIONES n",{"5 observaciones","8 observaciones","10 observaciones","12 observaciones","15 observaciones","20 observaciones","25 observaciones","30 observaciones"});
+ IF nn==0 THEN RETURN; END;
+ IF nn==1 THEN op:=5; END;
+ IF nn==2 THEN op:=8; END;
+ IF nn==3 THEN op:=10; END;
+ IF nn==4 THEN op:=12; END;
+ IF nn==5 THEN op:=15; END;
+ IF nn==6 THEN op:=20; END;
+ IF nn==7 THEN op:=25; END;
+ IF nn==8 THEN op:=30; END;
+ R2K:=nk; R2N:=op;
+ R2X:=MAKEMAT(0,R2N,R2K); R2Y:=MAKEMAT(0,R2N,1);
+ R2D:=MAKEMAT(0,R2N,R2K+1);
+ R2A:=MAKEMAT(0,R2K+1,R2K+1);
+ R2G:=MAKEMAT(0,R2K+1,1);
+ R2AI:=MAKEMAT(0,R2K+1,R2K+1);
+ R2B:=MAKEMAT(0,R2K+1,1);
+ R2Aviso("Dimensiones actualizadas. Se reiniciaron los datos.");
+END;
+
+R2Datos()
+BEGIN
+ LOCAL op,fin;
+ fin:=0;
+ REPEAT
+  op:=R2Elige("MODULO 2: DATOS Y MODELO",{
+   "1 Editar tabla de observaciones",
+   "2 Configurar n y numero de X",
+   "3 Ver matrices de datos X e Y",
+   "4 Configurar alfa",
+   "5 Volver"
+  });
+  IF op==1 THEN R2Editor(); END;
+  IF op==2 THEN R2Config(); END;
+  IF op==3 THEN
+   R2VerM("MATRIZ X (datos independientes)",R2X,R2N,R2K);
+   R2VerM("VECTOR Y (dependiente)",R2Y,R2N,1);
+  END;
+  IF op==4 THEN RmConfigAlpha(); END;
+  IF op==5 OR op==0 THEN fin:=1; END;
+ UNTIL fin==1;
+END;
+
+R2Calcula()
+BEGIN
+ LOCAL i,j,n,k,ym,yh,e,det;
+ n:=R2N; k:=R2K;
+ IF n<=k+1 THEN RETURN 0; END;
+ R2D:=MAKEMAT(0,n,k+1);
+ FOR i FROM 1 TO n DO
+  R2D(i,1):=1;
+  FOR j FROM 1 TO k DO R2D(i,j+1):=R2X(i,j); END;
+ END;
+ R2A:=TRN(R2D)*R2D;
+ det:=DET(R2A);
+ IF ABS(det)<0.0000000001 THEN RETURN 0; END;
+ R2AI:=INV(R2A);
+ R2G:=TRN(R2D)*R2Y;
+ R2B:=R2AI*R2G;
+ ym:=0;
+ FOR i FROM 1 TO n DO ym:=ym+R2Y(i,1); END;
+ ym:=ym/n;
+ R2SSE:=0; R2SST:=0;
+ FOR i FROM 1 TO n DO
+  yh:=0;
+  FOR j FROM 1 TO k+1 DO yh:=yh+R2D(i,j)*R2B(j,1); END;
+  e:=R2Y(i,1)-yh;
+  R2SSE:=R2SSE+e^2;
+  R2SST:=R2SST+(R2Y(i,1)-ym)^2;
+ END;
+ R2SSR:=R2SST-R2SSE;
+ R2DF:=n-k-1;
+ IF R2DF<=0 THEN RETURN 0; END;
+ R2S:=SQRT(R2SSE/R2DF);
+ RETURN 1;
+END;
+
+R2VerM(tit,M,nr,nc)
+BEGIN
+ LOCAL top,ini,fin,k,i,j,y,x,cw,cs,cc,done,lab;
+ top:=1; ini:=1; done:=0;
+ REPEAT
+  RECT_P(G1,0,0,319,239,RGB(8,16,40),RGB(8,16,40));
+  R2Cab(tit,RGB(255,215,0),3);
+  TEXTOUT_P("Dimension: "+STRING(nr)+" x "+STRING(nc),G1,7,30,2,RGB(0,230,255));
+  cw:=92; cs:=MIN(3,nc-ini+1);
+  TEXTOUT_P("Columnas "+STRING(ini)+"-"+STRING(ini+cs-1)+" de "+STRING(nc),G1,7,44,2,RGB(255,215,0));
+  FOR j FROM 1 TO cs DO
+   x:=34+(j-1)*94;
+   TEXTOUT_P("C"+STRING(ini+j-1),G1,x+4,61,2,RGB(0,230,255));
+  END;
+  FOR i FROM 1 TO 6 DO
+   IF top+i-1<=nr THEN
+    y:=78+(i-1)*22;
+    TEXTOUT_P("R"+STRING(top+i-1),G1,3,y+4,1,RGB(255,215,0));
+    TEXTOUT_P("[",G1,23,y+1,3,RGB(255,255,255));
+    FOR j FROM 1 TO cs DO
+     x:=34+(j-1)*94;
+     TEXTOUT_P(R2Fmt(M(top+i-1,ini+j-1),3),G1,x,y+4,2,RGB(255,255,255));
+    END;
+    TEXTOUT_P("]",G1,34+cs*94-9,y+1,3,RGB(255,255,255));
+   END;
+  END;
+  R2PieNav("FILAS -","SALIR","MAS");
+  BLIT_P(G0,G1); k:=R2Espera();
+  IF k==2 THEN top:=MAX(1,top-1); END;
+  IF k==12 THEN top:=MIN(MAX(1,nr-5),top+1); END;
+  IF k==4 OR k==30 THEN done:=1; END;
+  IF k==1000 AND TapY>=219 THEN
+   IF TapX<107 THEN top:=MAX(1,top-5); END;
+   IF TapX>=107 AND TapX<214 THEN done:=1; END;
+   IF TapX>=214 THEN
+    IF ini+3<=nc THEN ini:=ini+3; ELSE ini:=1; END;
+   END;
+  END;
+ UNTIL done==1;
+END;
+
+R2Metodo()
+BEGIN
+ LOCAL ok;
+ ok:=R2Calcula();
+ IF ok==0 THEN
+  R2Aviso("No se puede invertir A. Revise n, datos o colinealidad exacta entre X.");
+  RETURN;
+ END;
+ R2VerM("MATRIZ DE DISENO X (n x k+1)",R2D,R2N,R2K+1);
+ R2VerM("MATRIZ A = X' * X",R2A,R2K+1,R2K+1);
+ R2VerM("VECTOR g = X' * Y",R2G,R2K+1,1);
+ R2VerM("INVERSA A^-1",R2AI,R2K+1,R2K+1);
+ R2VerM("COEFICIENTES b = A^-1 * g",R2B,R2K+1,1);
+ R2Ver("RESULTADO DEL METODO MATRICIAL",{
+  "Modelo estimado por minimos cuadrados",
+  "b = A^-1 * g",
+  "b0 = "+R2Fmt(R2B(1,1),6),
+  "SSE = "+R2Fmt(R2SSE,6),
+  "SST = "+R2Fmt(R2SST,6),
+  "SSR = "+R2Fmt(R2SSR,6),
+  "s = raiz(SSE/gl error) = "+R2Fmt(R2S,6),
+  "gl error = n-k-1 = "+STRING(R2DF),
+  "Los valores de b estan en el vector mostrado."
+ });
+END;
+
+EXPORT R2IC()
+BEGIN
+ LOCAL ok,i,df,tc,ee,lo,hi;
+ ok:=R2Calcula();
+ IF ok==0 THEN R2Aviso("Primero ingrese datos validos y estime el modelo"); RETURN; END;
+ df:=R2DF; tc:=STUDENT_ICDF(df,1-RmAlpha/2);
+ R2Ver("2.2 INTERVALOS DE CONFIANZA",{
+  "Confianza = "+R2Fmt(100*(1-RmAlpha),2)+"%",
+  "gl = n-k-1 = "+STRING(df),
+  "S = raiz(SSE/gl) = "+R2Fmt(R2S,6),
+  "Cii se obtiene de la diagonal de A^-1",
+  "IC(beta_i) = bi +/- t0*S*raiz(Cii)",
+  "t critico bilateral = "+R2Fmt(tc,5)
+ });
+ FOR i FROM 1 TO R2K+1 DO
+  ee:=R2S*SQRT(R2AI(i,i));
+  lo:=R2B(i,1)-tc*ee; hi:=R2B(i,1)+tc*ee;
+  R2Ver("IC PARA BETA"+STRING(i-1),{
+   "Confianza = "+R2Fmt(100*(1-RmAlpha),2)+"%",
+   "Parametro: beta"+STRING(i-1),
+   "b"+STRING(i-1)+" = "+R2Fmt(R2B(i,1),6),
+   "Cii = "+R2Fmt(R2AI(i,i),8),
+   "EE(bi) = S*raiz(Cii) = "+R2Fmt(ee,6),
+   "Margen = t0*EE = "+R2Fmt(tc*ee,6),
+   "Limite inferior = "+R2Fmt(lo,6),
+   "Limite superior = "+R2Fmt(hi,6)
+  });
+ END;
+END;
+
+EXPORT R2Prueba()
+BEGIN
+ LOCAL ok,i,df,tc,ee,tv,pv,dec;
+ ok:=R2Calcula();
+ IF ok==0 THEN R2Aviso("Primero ingrese datos validos y estime el modelo"); RETURN; END;
+ df:=R2DF; tc:=STUDENT_ICDF(df,1-RmAlpha/2);
+ FOR i FROM 1 TO R2K+1 DO
+  ee:=R2S*SQRT(R2AI(i,i));
+  IF ee<=0 THEN R2Aviso("Error estandar nulo para beta"+STRING(i-1)); ELSE
+   tv:=R2B(i,1)/ee;
+   pv:=2*(1-STUDENT_CDF(df,ABS(tv)));
+   dec:=ABS(tv)>tc;
+   R2Ver("2.3 PRUEBA PARA BETA"+STRING(i-1),{
+    "H0: beta"+STRING(i-1)+" = 0",
+    "H1: beta"+STRING(i-1)+" <> 0",
+    "Prueba bilateral",
+    "Alfa = "+R2Fmt(RmAlpha,4)+"   gl = "+STRING(df),
+    "T = (bi - 0)/(S*raiz(Cii))",
+    "bi = "+R2Fmt(R2B(i,1),6),
+    "EE(bi) = "+R2Fmt(ee,6),
+    "T calculado = "+R2Fmt(tv,6),
+    "T critico = +/- "+R2Fmt(tc,6),
+    "p-valor = "+R2Fmt(pv,7),
+    "Rechazar H0 si |Tcalc| > t0",
+    IFTE(dec,"Se rechaza H0: beta significativo","No se rechaza H0: evidencia insuficiente")
+   });
+  END;
+ END;
+END;
+
+EXPORT R2ANOVA()
+BEGIN
+ LOCAL ok,df,k,n,msr,mse,fv,fc,pv,dec;
+ ok:=R2Calcula();
+ IF ok==0 THEN R2Aviso("Primero ingrese datos validos y estime el modelo"); RETURN; END;
+ df:=R2DF; k:=R2K; n:=R2N;
+ IF R2SSE<=0 THEN R2Aviso("SSE es nulo; no se puede calcular F"); RETURN; END;
+ msr:=R2SSR/k; mse:=R2SSE/df;
+ fv:=msr/mse; fc:=FISHER_ICDF(k,df,1-RmAlpha);
+ pv:=1-FISHER_CDF(k,df,fv); dec:=fv>fc;
+ R2Ver("2.4 PODER PREDICTIVO: PRUEBA F",{
+  "H0: beta1 = beta2 = ... = betak = 0",
+  "H1: al menos un beta_j <> 0",
+  "Alfa = "+R2Fmt(RmAlpha,4),
+  "F = (SSR/k)/(SSE/(n-k-1))",
+  "n = "+STRING(n)+"   k = "+STRING(k),
+  "gl regresion = "+STRING(k),
+  "gl error = "+STRING(df),
+  "F calculado = "+R2Fmt(fv,6),
+  "F critico = "+R2Fmt(fc,6),
+  "p-valor = "+R2Fmt(pv,7),
+  "Rechazar H0 si Fcalc > Fcrit"
+ });
+ R2Ver("TABLA ANOVA",{
+  "Fuente       SC             gl",
+  "Regresion    "+R2Fmt(R2SSR,5)+"      "+STRING(k),
+  "Error        "+R2Fmt(R2SSE,5)+"      "+STRING(df),
+  "Total        "+R2Fmt(R2SST,5)+"      "+STRING(n-1),
+  " ",
+  "Fuente       CM             F",
+  "Regresion    "+R2Fmt(msr,5)+"      "+R2Fmt(fv,5),
+  "Error        "+R2Fmt(mse,5),
+  " ",
+  "SST = sum(yi - ymedia)^2",
+  "SSR = sum(bj*gj) - (sumY)^2/n",
+  "SSE = SST - SSR"
+ });
+ R2Ver("DECISION: PODER PREDICTIVO",{
+  "F calculado = "+R2Fmt(fv,6),
+  "F critico = "+R2Fmt(fc,6),
+  "p-valor = "+R2Fmt(pv,7),
+  IFTE(dec,"Se rechaza H0: el modelo tiene poder predictivo","No se rechaza H0: no hay evidencia de poder predictivo")
+ });
+END;
+
+EXPORT R2MOD()
+BEGIN
+ LOCAL op,fin;
+ DIMGROB_P(G1,320,240,RGB(8,16,40));
+ fin:=0;
+ REPEAT
+  op:=R2Elige("MODULO 2: REGRESION MULTIPLE",{
+   "Datos y modelo (editar observaciones)",
+   "2.1 Metodo matricial",
+   "2.2 Intervalos de confianza beta_i",
+   "2.3 Pruebas de hipotesis beta_i",
+   "2.4 Poder predictivo (ANOVA)",
+   "Volver"
+  });
+  IF op==1 THEN R2Datos(); END;
+  IF op==2 THEN R2Metodo(); END;
+  IF op==3 THEN R2IC(); END;
+  IF op==4 THEN R2Prueba(); END;
+  IF op==5 THEN R2ANOVA(); END;
+  IF op==6 OR op==0 THEN fin:=1; END;
+ UNTIL fin==1;
+END;
