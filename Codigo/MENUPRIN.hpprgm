@@ -129,13 +129,16 @@ BEGIN
     IF s==7 THEN RmLinealidad(); END;
     IF s==8 THEN RmNoLineal(); END;
     DIMGROB_P(G1,320,240,RGB(8,16,40));
-  ELSE
-    IF mi==2 THEN
-      R2Abrir(s);
-    ELSE
-      Pendiente(mi,tit,col);
-    END;
+    RETURN;
   END;
+  IF mi==2 THEN
+    // El menu de MENUPRIN es el unico menu del Modulo 2.
+    // R2Abrir ejecuta directamente el submodulo seleccionado.
+    R2Abrir(s);
+    DIMGROB_P(G1,320,240,RGB(8,16,40));
+    RETURN;
+  END;
+  Pendiente(mi,tit,col);
 END;
 Submenu(mi,tit,items,col)
 BEGIN
